@@ -1,0 +1,123 @@
+{% extends "general/persian/base.html" %}
+
+{% block head %}
+    <link rel="stylesheet" href="{{url_for('static', filename='css/general/collaboration.css')}}">
+{% endblock %}
+
+{% block title %}
+    همکاری با ما
+{% endblock %}
+
+
+{% block body %}
+
+    <main>
+        <div class="form-container">
+            <h2>ثبت اطلاعات</h2>
+            <p>از طریق این فرم میتوانید درخواست خود را برای همکاری ثبت کنید.</p>
+
+            <div class="form">
+                <input type="text" name="fullname" placeholder="نام و نام خانوادگی">
+                <input type="tel" name="phone" placeholder="شماره تماس">
+
+                <label for="collaboration-type">نوع همکاری:</label>
+                <select name="collaboration-type" id="collaboration-type">
+                    <option value="">انتخاب کنید</option>
+                    <option value="forosh">همکاری در فروش</option>
+                    <option value="kar">کار در مجموعه</option>
+                    <option value="other">غیره</option>
+                </select>
+
+                <div id="dynamic-fields"></div>
+
+                <button class="submit">ارسال اطلاعات</button>
+
+            </div>
+        </div>
+    </main>
+
+{% endblock %}
+
+{% block script %}
+    <script>
+        ActiveNavLinkPage("#collaborationPage");
+
+        const selectElement = document.getElementById('collaboration-type');
+        const dynamicFields = document.getElementById('dynamic-fields');
+
+        selectElement.addEventListener('change', function () {
+            dynamicFields.innerHTML = '';
+            const value = this.value;
+
+            if (value === 'forosh') {
+                dynamicFields.innerHTML = `<textarea name="description" placeholder="نکات اضافی..." rows="4"></textarea>`;
+            } else if (value === 'kar') {
+                dynamicFields.innerHTML = `
+                    <input type="text" name="profession" placeholder="حرفه">
+                    <input type="text" name="history" placeholder="سابقه کاری">
+                    <textarea name="description" placeholder="نکات اضافی..." rows="4"></textarea>
+                `;
+            } else if (value === 'other') {
+                dynamicFields.innerHTML = `<textarea name="description" placeholder="جزییات همکاری و نکات اضافی..." rows="4"></textarea>`;
+            }
+        });
+
+        document.querySelector(".submit").addEventListener("click", async () => {
+            let isValid = true;
+
+            const inputs = document.querySelectorAll("input, textarea");
+            for (const input of inputs) {
+                if (input.value.trim() === "") {
+                    showAlert("لطفا تمام فیلدها را پر نمایید.", "danger");
+                    isValid = false;
+                    break;
+                }
+            }
+
+            if (selectElement.value === "") {
+                showAlert("لطفا نوع همکاری را انتخاب نمایید", "danger");
+                isValid = false;
+            }
+
+            if (!isValid) return;
+
+            const collaborationData = {
+                description: document.querySelector("textarea[name='description']")?.value || "",
+                profession: document.querySelector("input[name='profession']")?.value || null,
+                history: document.querySelector("input[name='history']")?.value || null
+            };
+
+            const formData = {
+                fullname: document.querySelector("input[name='fullname']").value,
+                phone: document.querySelector("input[name='phone']").value,
+                collaborationType: selectElement.value,
+                collaborationData: collaborationData
+            };
+
+            const lsr = localStorage.getItem("collaborationDetails");
+            if (lsr === JSON.stringify(formData)) {
+                showAlert("شما قبلاً این فرم را ارسال کرده‌اید.", "warning");
+                return;
+            }
+
+            try {
+                const response = await fetch("/api/collaboration-api", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(formData)
+                });
+                const req = await response.json();
+
+                showAlert(req.message, req.type);
+
+                if (req.error === undefined) {
+                    localStorage.setItem("collaborationDetails", JSON.stringify(formData));
+                } else {
+                    console.error(req.error);
+                }
+            } catch (error) {
+                showAlert("خطایی در ارتباط با سرور رخ داد.", "danger");
+            }
+        });
+    </script>
+{% endblock %}

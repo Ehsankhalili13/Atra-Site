@@ -1,0 +1,289 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        96,
+        -208
+      ],
+      "id": "7b5fafd4-d995-449a-8117-97aef138698d",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "call_to_ai",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -640,
+        -208
+      ],
+      "id": "dc964873-7933-4411-a347-18a189ecdbac",
+      "name": "Webhook",
+      "webhookId": "f4451c12-76e2-43c4-970c-3694241bbf0c"
+    },
+    {
+      "parameters": {
+        "url": "https://atra-golfer.com/static/atra-golfer-knowledge-base.md",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "text"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        -336,
+        -208
+      ],
+      "id": "c1dc5d36-e5ae-4e63-8895-26393a9693f9",
+      "name": "HTTP Request1"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "glm-4-flash",
+          "mode": "list",
+          "cachedResultName": "glm-4-flash"
+        },
+        "responsesApiEnabled": false,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -352,
+        16
+      ],
+      "id": "8bb4e7e0-3e8c-4e6d-a303-f98b1d871f14",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "15T6pSov5m6iUPaS",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=این پیام کاربر شرکت آترا گلفر هست.لطفا بر اساس راهنمای کاربر سوال کاربر رو جواب بده.\n\nراهنما :\n{{ $('HTTP Request1').item.json.data }}\n\nپیام کاربر :\n{{ $('Webhook').item.json.body.message }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -176,
+        -208
+      ],
+      "id": "c7a14cb2-f31c-4cde-99f8-e63a03f8f078",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "=={{ String($('Webhook').item.json.headers['x-session-id'] || $('Webhook').item.json.headers['X-Session-Id'] || $('Webhook').item.json.body.sessionId || 'default_session') }}",
+        "sessionTTL": 86400,
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryRedisChat",
+      "typeVersion": 1.6,
+      "position": [
+        -192,
+        16
+      ],
+      "id": "d24a025e-fec5-4d6f-bad4-e2786214ff54",
+      "name": "Redis Chat Memory",
+      "credentials": {
+        "redis": {
+          "id": "drBrfPtjVgvFlSIh",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "path": "delete_chat",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -640,
+        -400
+      ],
+      "id": "005adedd-15c9-433e-a04e-1a8ca6dca8c6",
+      "name": "Webhook1",
+      "webhookId": "5e24deac-7876-4b63-b549-91e09af449f4"
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "key": "=={{ String($json.headers['x-session-id'] || $json.headers['X-Session-Id'] || $json.body.sessionId || 'default_session') }}"
+      },
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        -272,
+        -400
+      ],
+      "id": "d87755a0-4b4d-4630-9203-8ef36559a431",
+      "name": "Redis",
+      "credentials": {
+        "redis": {
+          "id": "drBrfPtjVgvFlSIh",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\n  \"success\": \"true\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        96,
+        -400
+      ],
+      "id": "197fa8c2-78eb-4435-8d72-e34d520a725f",
+      "name": "Respond to Webhook1"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Call this tool to get the list of Atra Golfer's products. Always use this tool instead of your own memory, since the product list may change.\n\nInput: a \"brand\" parameter with one of these values:\n- \"atra\" → when the user asked only for Atra products\n- \"golfer\" → when the user asked only for Golfer products\n- \"all\" → when the user said \"Atra Golfer\" or asked generally \"what products do you have\" without specifying a sub-brand\n\nOutput: a list of products, each with name, short description, and sub-brand (Atra or Golfer).\n\nNote: \"Atra\" and \"Golfer\" are two separate sub-brands. In your reply to the user, only show products from the sub-brand they asked about, unless they specified both or neither.\n\nIf this tool returns an error or no response: tell the user that the product list is currently unavailable and they should call the company's phone number (02153267) for product info.",
+        "url": "https://atra-golfer.com/api/products",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.5,
+      "position": [
+        -32,
+        80
+      ],
+      "id": "1364aa89-b498-459e-ab95-23feffd6fb90",
+      "name": "Get Products"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook1": {
+      "main": [
+        [
+          {
+            "node": "Redis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Products": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "c890f069-9d70-4374-843e-6d4a21904db1",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "b17b30402ad37bcb1234ba53cb3d9c9732d42f59652ef164395c9f8a2f15ba82"
+  },
+  "nodeGroups": [],
+  "id": "Ba2HiSY6we85aWz7",
+  "tags": []
+}

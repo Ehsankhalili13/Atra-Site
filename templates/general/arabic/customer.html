@@ -1,0 +1,105 @@
+{% extends "general/arabic/base.html" %}
+
+{% block head %}
+    <link rel="stylesheet" href="{{url_for('static', filename='css/general/customer.css')}}">
+{% endblock %}
+
+{% block title %}
+    خدمة العملاء
+{% endblock %}
+
+
+{% block body %}
+
+    <main>
+
+        <section class="FAQ">
+            <h2>الأسئلة الشائعة</h2>
+            <p>من خلال هذا القسم يمكنك العثور على إجابات لأسئلتك حول منتجات شركة آترا.</p>
+
+            {% for group in faqs|groupby('category_ar') %}
+            <div class="faq-item-parent">
+                <div class="faq-question parent">
+                    <span>{{ group.grouper }}</span>
+                    <div class="faq-icon"></div>
+                </div>
+
+                <div class="faq-answer">
+
+                    {% for faq in group.list %}
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <span>{{ faq.question_ar }}</span>
+                            <div class="faq-icon"></div>
+                        </div>
+                        <div class="faq-answer fat">
+                            {{ faq.answer_ar }}
+                        </div>
+                    </div>
+                    {% endfor %}
+
+                </div>
+            </div>
+            {% endfor %}
+        </section>
+    </main>
+
+{% endblock %}
+
+{% block script %}
+    <script>
+        ActiveNavLinkPage("#customerPage");
+
+        document.querySelectorAll('.faq-question.parent').forEach(question => {
+            question.addEventListener('click', (e) => {
+                const item = question.parentElement;
+                const answer = item.querySelector('.faq-answer');
+
+                document.querySelectorAll('.faq-item-parent').forEach(i => {
+                    if (i !== item) {
+                        i.classList.remove('active');
+                        const targetAnswer = i.querySelector('.faq-answer');
+                        if (targetAnswer) targetAnswer.style.maxHeight = null;
+                    }
+                });
+
+                item.classList.toggle('active');
+                if (item.classList.contains('active')) {
+                    answer.style.maxHeight = 400 + "px";
+                    answer.style.overflowY = "auto";
+                } else {
+                    answer.style.maxHeight = null;
+                    answer.style.overflowY = null;
+                }
+            });
+        });
+
+        document.querySelectorAll('.faq-item .faq-question').forEach(question => {
+            question.addEventListener('click', (e) => {
+                e.stopPropagation();
+
+                const item = question.parentElement;
+                const answer = item.querySelector('.faq-answer');
+                const parentProduct = item.closest('.faq-item-parent');
+
+                parentProduct.querySelectorAll('.faq-item').forEach(i => {
+                    if (i !== item) {
+                        i.classList.remove('active');
+                        const targetAnswer = i.querySelector('.faq-answer');
+                        if (targetAnswer) targetAnswer.style.maxHeight = null;
+                    }
+                });
+
+                item.classList.toggle('active');
+                if (item.classList.contains('active')) {
+                    answer.style.maxHeight = answer.scrollHeight + "px";
+
+                    const parentAnswer = parentProduct.querySelector('.faq-answer');
+                    parentAnswer.style.maxHeight = (parentAnswer.scrollHeight + answer.scrollHeight) + "px";
+                } else {
+                    answer.style.maxHeight = null;
+                }
+            });
+        });
+    </script>
+{% endblock %}

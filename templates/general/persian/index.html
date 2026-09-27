@@ -1,0 +1,122 @@
+{% extends "general/persian/base.html" %}
+
+{% block head %}
+<link rel="stylesheet" href="{{url_for('static', filename='css/general/index.css')}}">
+{% endblock %}
+
+{% block title %}خانه{% endblock %}
+
+{% block body %}
+<main>
+  <!-- کاروسل اسلایدشو -->
+  <div id="carousel" class="carousel slide slideshow carousel-fade" data-bs-ride="carousel" data-bs-interval="3500">
+    <div class="carousel-indicators">
+      {% for slide in slides %}
+      <button type="button" data-bs-target="#carousel" data-bs-slide-to="{{ loop.index0 }}"
+        class="{% if loop.first %}active{% endif %}" aria-current="{% if loop.first %}true{% endif %}"
+        aria-label="اسلاید {{ loop.index }}"></button>
+      {% endfor %}
+    </div>
+
+    <div class="carousel-inner">
+      {% for slide in slides %}
+      <div class="carousel-item {% if loop.first %}active{% endif %}">
+        <div class="slide-bg" style="background-image: url('/static/img/slideshow/{{slide.slide_img_location}}')"></div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <button class="carousel-control-prev" type="button" data-bs-target="#carousel" data-bs-slide="prev">
+      <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+      <span class="visually-hidden">قبلی</span>
+    </button>
+
+    <button class="carousel-control-next" type="button" data-bs-target="#carousel" data-bs-slide="next">
+      <span class="carousel-control-next-icon" aria-hidden="true"></span>
+      <span class="visually-hidden">بعدی</span>
+    </button>
+  </div>
+
+  <section class="main-container">
+    <!-- بخش دستاوردها و آمار -->
+    <section class="achievements-section">
+      <div class="achievements-container">
+        <div class="achievement-item">
+          <div class="achievement-icon-wrapper">
+            <img src="{{url_for('static', filename='theme-image/experience.svg')}}" alt="آیکون سال‌های تجربه" class="achievement-icon">
+          </div>
+          <div class="achievement-content">
+            <span class="achievement-number">۳۵<span class="plus-sign">+</span></span>
+            <p class="achievement-label">سال تجربه درخشان</p>
+          </div>
+        </div>
+
+        <div class="achievement-item">
+          <div class="achievement-icon-wrapper">
+            <img src="{{url_for('static', filename='theme-image/earth-globe.svg')}}" alt="آیکون صادرات" class="achievement-icon">
+          </div>
+          <div class="achievement-content">
+            <span class="achievement-number">صادرات</span>
+            <p class="achievement-label">به خارج از کشور</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- بخش گواهینامه‌ها / ISO -->
+    <section class="iso-container">
+      <div class="atra-iso-band">
+        <div class="atra-iso-track">
+          {% for achievement in achievements %}
+          <div class="iso-mini-card">
+            <div class="iso-mini-img-wrapper">
+              <img src="{{ url_for('static', filename='img/achievements_pic/' + achievement.achievement_img) }}" alt="{{ achievement.achievement_code }}">
+            </div>
+            <h4 class="iso-mini-title">{{ achievement.achievement_name_fa }}</h4>
+            <p class="iso-mini-sub">{{ achievement.achievement_code }}</p>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </section>
+
+    <div class="custom-divider line1"></div>
+
+    <!-- بخش درباره ما -->
+    <section class="about">
+      <h2 class="about__title">شرکت آترا ، پیشرو در تولید لوازم خانگی</h2>
+      <div class="about-content-wrapper">
+        <div class="gallery-container">
+          <div class="card card-left">
+            <img src="{{url_for('static', filename='img/pic2.jpg')}}" alt="تصویر کیفیت و ساخت">
+          </div>
+          <div class="card card-main">
+            <img src="{{url_for('static', filename='img/pic1.jpg')}}" alt="تصویر اصلی آترا گلفر">
+          </div>
+          <div class="card card-right">
+            <img src="{{url_for('static', filename='img/pic3.jpg')}}" alt="خط تولید آترا">
+          </div>
+        </div>
+
+        <p class="short_about_description">
+گروه تولیدی صنعتی آترا گلفر فعالیت خود را از سال ۱۳۷۰ با نام گروه تولیدی آترا آغاز کرد و طی سال‌های متمادی، با تکیه بر تجربه، دانش فنی و نگاه آینده‌نگر، مسیر رشد و توسعه را با قدرت ادامه داده است. این مجموعه با احداث کارخانه‌ای در منطقه صنعتی پرند تهران، گام مهمی در جهت تولید محصولات باکیفیت ایرانی در حوزه لوازم خانگی برداشت و توانست جایگاه شایسته‌ای در این صنعت به دست آورد.
+آترا گلفر با بیش از ۳۵ سال سابقه درخشان، همواره بر پایه اصولی همچون کیفیت، دوام، ایمنی، نوآوری و رضایت مشتری فعالیت کرده و در این مسیر، تولید محصولاتی مانند بخاری‌ها و اجاق‌خوراک‌پزهای نفت‌سوز را در اولویت قرار داده است. بهره‌گیری از نیروی انسانی متخصص، تجهیزات مناسب و کنترل دقیق فرآیندهای تولید، سبب شده تا محصولات این شرکت از استانداردی قابل‌اعتماد برخوردار باشند.
+این مجموعه با رویکردی حرفه‌ای و توسعه‌محور، تنها به بازار داخلی بسنده نکرده و با افتخار، صادرات به کشور عراق را نیز در کارنامه خود دارد؛ اقدامی که نشان‌دهنده کیفیت قابل قبول محصولات و اعتماد بازارهای منطقه‌ای به نام آترا گلفر است.
+        </p>
+      </div>
+    </section>
+
+    <div class="custom-divider line2"></div>
+  </section>
+</main>
+{% endblock %}
+
+{% block script %}
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    if (typeof ActiveNavLinkPage === "function") {
+      ActiveNavLinkPage("#homePage");
+    }
+  });
+</script>
+{% endblock %}

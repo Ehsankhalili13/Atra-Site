@@ -1,0 +1,29 @@
+{% extends "general/persian/base.html" %}
+
+{% block head %}
+    <link rel="stylesheet" href="{{url_for('static', filename='css/general/products.css')}}">
+    <link rel="stylesheet" href="{{url_for('static', filename='css/general/product_box.css')}}">
+{% endblock %}
+
+{% block title %}
+    محصولات
+{% endblock %}
+
+
+{% block body %}
+
+    <main>
+        
+        {% for product in p %}
+            {% include "general/persian/product_box.html" %}
+        {% endfor %}
+
+    </main>
+    
+{% endblock %}
+
+{% block script %}
+    <script>
+        ActiveNavLinkPage("#productsPage");
+    </script>
+{% endblock %}

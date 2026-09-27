@@ -1,0 +1,602 @@
+{% extends "admin/base.html" %}
+
+{% block header %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin/dashboard.css') }}">
+<script src="{{ url_for('static', filename='js/chart.umd.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/xlsx.full.min.js') }}"></script>
+{% endblock %}
+
+{% block title %}داشبورد مدیریت آمار{% endblock %}
+
+{% block body %}
+{% if usl %}
+
+<main class="dashboard-main">
+
+    <!-- JS Data Storage -->
+    <div id="dashboard-data"
+         data-stats='{{ views_data | tojson }}'
+         data-chart='{{ chart_data | tojson }}'
+         data-current-year="{{ current_year }}"
+         data-current-month="{{ current_month }}"
+         data-current-day="{{ current_day }}"
+         data-start-year="{{ start_year }}"
+         hidden>
+    </div>
+
+    <!-- Compact Stat Banner (باکس یکپارچه و جمع‌وجور بازدیدها) -->
+    <div class="views-summary-box">
+        <div class="summary-total">
+            <span class="label">جمع کل بازدیدها:</span>
+            <span class="value" id="totalAllLangsValue">۰</span>
+        </div>
+        <div class="summary-divider"></div>
+        <div class="summary-langs">
+            <div class="lang-stat fa">
+                <span class="stat-dot"></span>
+                <span>فارسی:</span>
+                <strong id="totalFaOverview">۰</strong>
+            </div>
+            <div class="lang-stat en">
+                <span class="stat-dot"></span>
+                <span>انگلیسی:</span>
+                <strong id="totalEnOverview">۰</strong>
+            </div>
+            <div class="lang-stat ar">
+                <span class="stat-dot"></span>
+                <span>عربی:</span>
+                <strong id="totalArOverview">۰</strong>
+            </div>
+        </div>
+    </div>
+
+    <!-- Collaboration Proposals Section (بخش پیشنهادهای همکاری) -->
+    <div class="suggestions-card">
+        <div class="suggestions-header">
+            <h3>پیشنهاد‌های همکاری</h3>
+            <a href="/atra-site/admin/collaborations" class="view-all-link">
+                مشاهده تمام پیشنهادات
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                    <path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8z"/>
+                </svg>
+            </a>
+        </div>
+
+        <div class="suggestions-list" id="suggestionsList">
+            {% if suggestions %}
+                {% for sug in suggestions %}
+                <div class="suggestion-item" id="sug-item-{{ sug.id }}">
+                    <div class="sug-info">
+                        <div class="sug-title-row">
+                            <span class="sug-name">{{ sug.name or 'نامشخص' }}</span>
+                            {% if sug.collaboration_type %}
+                            <span class="sug-badge">{{ sug.collaboration_type }}</span>
+                            {% endif %}
+                        </div>
+                        <span class="sug-phone">شماره تماس: {{ sug.phone or 'ثبت نشده' }}</span>
+                    </div>
+                    <div class="sug-actions">
+                        <button class="btn btn-sm btn-outline-primary" onclick="openSuggestionModal({{ sug.id }})">
+                            جزئیات
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteSuggestion({{ sug.id }})">
+                            حذف
+                        </button>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-suggestions">پیشنهاد همکاری جدیدی یافت نشد.</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Table & Controls Section -->
+    <div class="table-card">
+        <div class="table-card-header">
+            <h3>آمار و تحلیل بازدید سایت</h3>
+            <button class="btn btn-primary history-btn" onclick="ActiveGP(); ActiveTP(document.querySelector('.history-container'))">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-clock-history" viewBox="0 0 16 16">
+                    <path d="M8.515 1.019A7 7 0 0 0 8 1V0a8 8 0 0 1 .589.022zm2.004.45a7 7 0 0 0-.985-.299l.219-.976c.383.086.76.2 1.122.342zm2.001 1.25a7 7 0 0 0-.814-.522l.444-.896c.353.175.692.378 1.015.606zm1.12 1.954c-.201-.264-.423-.513-.664-.746l.707-.707c.28.272.538.563.771.872zm.533 2.115c-.086-.383-.2-.76-.342-1.122l.976-.219c.16.42.293.854.398 1.294zm.025 2.224a7 7 0 0 0 .022-.589h1a8 8 0 0 1-.026.657zm-.507 2.054c.143-.362.256-.739.342-1.122l.976.219a8 8 0 0 1-.398 1.294zm-.897 1.916c.241-.233.463-.482.664-.746l.707.707a8 8 0 0 1-.772.872zm-1.341 1.63a7 7 0 0 0 .814-.522l.444.896a8 8 0 0 1-1.015.606zm-1.802 1.18c.362-.143.739-.256 1.122-.342l.219.976a8 8 0 0 1-1.294.398z"/>
+                    <path d="M8 1a7 7 0 1 0 4.95 11.95l.707.707A8 8 0 1 1 8 0z"/>
+                    <path d="M7.5 3a.5.5 0 0 1 .5.5v5.21l3.248 1.856a.5.5 0 0 1-.496.868l-3.5-2A.5.5 0 0 1 7 9V3.5a.5.5 0 0 1 .5-.5"/>
+                </svg>
+                تاریخچه و نمودارهای پیشرفته
+            </button>
+            <div class="filter-group">
+                <label for="timePeriod">بازه زمانی:</label>
+                <select id="timePeriod" class="form-select filter-select">
+                    <option value="today" selected>امروز</option>
+                    <option value="seven">۷ روز اخیر</option>
+                    <option value="month">این ماه</option>
+                    <option value="year">این سال</option>
+                    <option value="all">کل بازدیدها</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table custom-table">
+                <thead>
+                    <tr>
+                        <th>مسیر (Route)</th>
+                        <th>بازدید فارسی</th>
+                        <th>بازدید انگلیسی</th>
+                        <th>بازدید عربی</th>
+                        <th>مجموع</th>
+                    </tr>
+                </thead>
+                <tbody id="statsTableBody"></tbody>
+                <tfoot>
+                    <tr>
+                        <td>مجموع بازدید بازه</td>
+                        <td id="totalFa">۰</td>
+                        <td id="totalEn">۰</td>
+                        <td id="totalAr">۰</td>
+                        <td id="grandTotalFooter">۰</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+
+</main>
+  <script src="{{url_for('static', filename='js/modules.js')}}"></script>
+<script>
+const dashboardData = document.getElementById("dashboard-data");
+const selectElement = document.getElementById("timePeriod");
+const tableBody = document.getElementById("statsTableBody");
+
+const statsData = JSON.parse(dashboardData.dataset.stats || "[]");
+const rawChartData = JSON.parse(dashboardData.dataset.chart || "[]");
+
+const months = ["فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور", "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند"];
+const quarters = ["سه ماهه اول (بهار)", "سه ماهه دوم (تابستان)", "سه ماهه سوم (پاییز)", "سه ماهه چهارم (زمستان)"];
+const semiYears = ["شش ماهه اول", "شش ماهه دوم"];
+const farsiMonthNames = ["ماه اول", "ماه دوم", "ماه سوم", "ماه چهارم", "ماه پنجم", "ماه ششم", "ماه هفتم", "ماه هشتم", "ماه نهم", "ماه دهم", "ماه یازدهم", "ماه دوازدهم"];
+
+let myViewsChart = null;
+let chartPeriodType, chartPeriodValue, currentYear, currentMonth, currentDay, startYear;
+
+document.querySelectorAll('.sug-phone').forEach(el => {
+    el.innerText = toPersianDigits(el.innerText);
+});
+  
+function updateTable(period) {
+    let html = "";
+    let totalFa = 0, totalEn = 0, totalAr = 0;
+
+    statsData.forEach(row => {
+        const faVal = Number(row[`${period}_fa`]) || 0;
+        const enVal = Number(row[`${period}_en`]) || 0;
+        const arVal = Number(row[`${period}_ar`]) || 0;
+        const rowTotal = faVal + enVal + arVal;
+
+        totalFa += faVal;
+        totalEn += enVal;
+        totalAr += arVal;
+
+        html += `
+            <tr>
+                <td class="route-cell"><code>${row.route}</code></td>
+                <td class="val-fa">${faVal.toLocaleString('fa-IR')}</td>
+                <td class="val-en">${enVal.toLocaleString('fa-IR')}</td>
+                <td class="val-ar">${arVal.toLocaleString('fa-IR')}</td>
+                <td class="val-total">${rowTotal.toLocaleString('fa-IR')}</td>
+            </tr>
+        `;
+    });
+
+    tableBody.innerHTML = html;
+
+    const grandTotal = totalFa + totalEn + totalAr;
+    
+    document.getElementById("totalFa").innerText = totalFa.toLocaleString('fa-IR');
+    document.getElementById("totalEn").innerText = totalEn.toLocaleString('fa-IR');
+    document.getElementById("totalAr").innerText = totalAr.toLocaleString('fa-IR');
+    document.getElementById("grandTotalFooter").innerText = grandTotal.toLocaleString('fa-IR');
+
+    document.getElementById("totalFaOverview").innerText = totalFa.toLocaleString('fa-IR');
+    document.getElementById("totalEnOverview").innerText = totalEn.toLocaleString('fa-IR');
+    document.getElementById("totalArOverview").innerText = totalAr.toLocaleString('fa-IR');
+    document.getElementById("totalAllLangsValue").innerText = grandTotal.toLocaleString('fa-IR');
+}
+
+selectElement.addEventListener("change", function () {
+    updateTable(this.value);
+});
+
+updateTable("today");
+
+// توابع مربوط به مودال و حذف پیشنهادهای همکاری
+function openSuggestionModal(sugId) {
+    fetch(`/atra-site/admin/api/suggestions/${sugId}`)
+        .then(res => res.json())
+        .then(res => {
+            if (res.status === 'success') {
+                const data = res.data;
+                document.getElementById('sugModalName').innerText = data.name;
+                document.getElementById('sugModalPhone').innerText = data.phone;
+                document.getElementById('sugModalType').innerText = data.type;
+                document.getElementById('sugModalData').innerText = data.data;
+
+                ActiveGP();
+                ActiveTP(document.querySelector('.sug-modal-container'));
+            } else {
+                alert("خطا در دریافت اطلاعات پیشنهاد.");
+            }
+        })
+        .catch(() => alert("خطای ارتباط با سرور."));
+}
+
+function deleteSuggestion(sugId) {
+    if (!confirm("آیا از حذف این پیشنهاد همکاری مطمئن هستید؟")) return;
+
+    fetch(`/atra-site/admin/api/suggestions/${sugId}`, { method: 'DELETE' })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'success') {
+                const target = document.getElementById(`sug-item-${sugId}`);
+                if (target) target.remove();
+
+                const list = document.getElementById('suggestionsList');
+                if (!list.children.length) {
+                    list.innerHTML = '<div class="empty-suggestions">پیشنهاد همکاری جدیدی یافت نشد.</div>';
+                }
+            } else {
+                alert(data.message || "خطا در حذف پیشنهاد.");
+            }
+        })
+        .catch(() => alert("خطای شبکه در انجام عملیات."));
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    chartPeriodType = document.getElementById("chartPeriodType");
+    chartPeriodValue = document.getElementById("chartPeriodValue");
+
+    currentYear = parseInt(dashboardData.dataset.currentYear) || 1405;
+    currentMonth = parseInt(dashboardData.dataset.currentMonth) || 1;
+    currentDay = parseInt(dashboardData.dataset.currentDay) || 1;
+    startYear = parseInt(dashboardData.dataset.startYear) || currentYear;
+
+    chartPeriodType.addEventListener("change", updatePeriodValueOptions);
+    chartPeriodValue.addEventListener("change", handleChartUpdate);
+    document.getElementById("exportExcelBtn").addEventListener("click", exportTableToExcel);
+
+    const ctx = document.getElementById("viewsChart").getContext("2d");
+    
+    myViewsChart = new Chart(ctx, {
+        type: "line",
+        data: {
+            labels: [],
+            datasets: [
+                {
+                    label: "فارسی",
+                    data: [],
+                    borderColor: "#10b981",
+                    backgroundColor: "rgba(16, 185, 129, 0.1)",
+                    borderWidth: 2,
+                    tension: 0.3,
+                    fill: true
+                },
+                {
+                    label: "انگلیسی",
+                    data: [],
+                    borderColor: "#3b82f6",
+                    backgroundColor: "rgba(59, 130, 246, 0.1)",
+                    borderWidth: 2,
+                    tension: 0.3,
+                    fill: true
+                },
+                {
+                    label: "عربی",
+                    data: [],
+                    borderColor: "#ec4899",
+                    backgroundColor: "rgba(236, 72, 153, 0.1)",
+                    borderWidth: 2,
+                    tension: 0.3,
+                    fill: true
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { labels: { color: "var(--bs-body-color)" } }
+            },
+            scales: {
+                x: { ticks: { color: "var(--bs-body-color)" } },
+                y: { beginAtZero: true, ticks: { color: "var(--bs-body-color)" } }
+            }
+        }
+    });
+
+    updatePeriodValueOptions();
+});
+
+function updatePeriodValueOptions() {
+    if (!chartPeriodType || !chartPeriodValue) return;
+    const type = chartPeriodType.value;
+    let optionsHtml = "";
+
+    for (let year = startYear; year <= currentYear; year++) {
+        if (type === "monthly") {
+            months.forEach((month, index) => {
+                const monthNum = index + 1;
+                if (year < currentYear || (year === currentYear && monthNum <= currentMonth)) {
+                    optionsHtml += `<option value="${year}-m-${monthNum}">سال ${year} - ${month}</option>`;
+                }
+            });
+        } else if (type === "quarterly") {
+            const maxQuarter = Math.ceil(currentMonth / 3);
+            quarters.forEach((q, index) => {
+                const qNum = index + 1;
+                if (year < currentYear || (year === currentYear && qNum <= maxQuarter)) {
+                    optionsHtml += `<option value="${year}-q-${qNum}">سال ${year} - ${q}</option>`;
+                }
+            });
+        } else if (type === "semi-annual") {
+            const maxSemi = currentMonth <= 6 ? 1 : 2;
+            semiYears.forEach((s, index) => {
+                const sNum = index + 1;
+                if (year < currentYear || (year === currentYear && sNum <= maxSemi)) {
+                    optionsHtml += `<option value="${year}-s-${sNum}">سال ${year} - ${s}</option>`;
+                }
+            });
+        } else if (type === "yearly") {
+            optionsHtml += `<option value="${year}">کل بازدیدهای سال ${year}</option>`;
+        }
+    }
+
+    chartPeriodValue.innerHTML = optionsHtml;
+    handleChartUpdate();
+}
+
+function checkIncompleteWarning(selectedValue, selectedType) {
+    const oldAlert = document.getElementById("chart-warning-alert");
+    if (oldAlert) oldAlert.remove();
+
+    let isCurrentPeriod = false;
+
+    if (selectedType === "monthly" && selectedValue === `${currentYear}-m-${currentMonth}`) isCurrentPeriod = true;
+    else if (selectedType === "quarterly" && selectedValue === `${currentYear}-q-${Math.ceil(currentMonth / 3)}`) isCurrentPeriod = true;
+    else if (selectedType === "semi-annual" && selectedValue === `${currentYear}-s-${(currentMonth <= 6 ? 1 : 2)}`) isCurrentPeriod = true;
+    else if (selectedType === "yearly" && selectedValue === String(currentYear)) isCurrentPeriod = true;
+
+    if (isCurrentPeriod) {
+        const alertHtml = `
+            <div id="chart-warning-alert" class="alert-incomplete-warning">
+                ⚠️ <strong>توجه:</strong> این آمار مربوط به بازه جاری بوده و هنوز نهایی نشده است (امروز: ${currentDay} ${months[currentMonth-1]} ${currentYear}).
+            </div>
+        `;
+        document.querySelector(".history-modal-body").insertAdjacentHTML("afterbegin", alertHtml);
+    }
+}
+
+function handleChartUpdate() {
+    if (!chartPeriodType || !chartPeriodValue || !myViewsChart) return;
+
+    const selectedValue = chartPeriodValue.value;
+    const selectedType = chartPeriodType.value;
+    
+    checkIncompleteWarning(selectedValue, selectedType);
+    
+    let filteredLabels = [], filteredFa = [], filteredEn = [], filteredAr = [], tableRowsData = [];
+
+    if (selectedType === "monthly") {
+        const [targetYear, , targetMonth] = selectedValue.split("-");
+        let monthDaysData = [];
+
+        rawChartData.forEach(item => {
+            const [y, m, d] = item.date.split("-");
+            if (parseInt(y) === parseInt(targetYear) && parseInt(m) === parseInt(targetMonth)) {
+                monthDaysData.push({ dayNum: parseInt(d), fa: item.fa, en: item.en, ar: item.ar, dateStr: `${m}/${d}` });
+            }
+        });
+
+        monthDaysData.forEach(item => {
+            filteredLabels.push(item.dateStr);
+            filteredFa.push(item.fa); filteredEn.push(item.en); filteredAr.push(item.ar);
+        });
+
+        if (monthDaysData.length > 0) {
+            let weekIndex = 1;
+            let currentWeekFa = 0, currentWeekEn = 0, currentWeekAr = 0, daysInCurrentWeek = 0;
+
+            monthDaysData.forEach((dayData, index) => {
+                currentWeekFa += dayData.fa; currentWeekEn += dayData.en; currentWeekAr += dayData.ar;
+                daysInCurrentWeek++;
+
+                if (daysInCurrentWeek === 7 || (weekIndex <= 4 && dayData.dayNum === weekIndex * 7) || index === monthDaysData.length - 1) {
+                    let label = `هفته ${weekIndex}`;
+                    if (dayData.dayNum > 28 || weekIndex > 4) {
+                        const remainingDaysCount = monthDaysData.filter(d => d.dayNum > 28).length;
+                        label = `${remainingDaysCount} روز آخر ماه`;
+                    }
+                    tableRowsData.push({ label, fa: currentWeekFa, en: currentWeekEn, ar: currentWeekAr });
+                    currentWeekFa = 0; currentWeekEn = 0; currentWeekAr = 0; daysInCurrentWeek = 0;
+                    weekIndex++;
+                }
+            });
+        }
+    } else {
+        let startMonth = 1, endMonth = 12;
+
+        if (selectedType === "quarterly") {
+            const q = parseInt(selectedValue.split("-")[2]);
+            startMonth = (q - 1) * 3 + 1; endMonth = q * 3;
+        } else if (selectedType === "semi-annual") {
+            const s = parseInt(selectedValue.split("-")[2]);
+            startMonth = s === 1 ? 1 : 7; endMonth = s === 1 ? 6 : 12;
+        }
+
+        const targetYear = selectedValue.split("-")[0];
+        let idx = 1;
+
+        for (let m = startMonth; m <= endMonth; m++) {
+            if (targetYear === String(currentYear) && m > currentMonth) break;
+            
+            let sumFa = 0, sumEn = 0, sumAr = 0;
+            rawChartData.forEach(item => {
+                const [itemY, itemM] = item.date.split("-");
+                if (parseInt(itemY) === parseInt(targetYear) && parseInt(itemM) === m) {
+                    sumFa += item.fa; sumEn += item.en; sumAr += item.ar;
+                }
+            });
+
+            filteredLabels.push(months[m - 1]);
+            filteredFa.push(sumFa); filteredEn.push(sumEn); filteredAr.push(sumAr);
+            tableRowsData.push({ label: `${farsiMonthNames[idx - 1]} (${months[m - 1]})`, fa: sumFa, en: sumEn, ar: sumAr });
+            idx++;
+        }
+    }
+
+    myViewsChart.data.labels = filteredLabels;
+    myViewsChart.data.datasets[0].data = filteredFa;
+    myViewsChart.data.datasets[1].data = filteredEn;
+    myViewsChart.data.datasets[2].data = filteredAr;
+    myViewsChart.update();
+
+    renderPeriodTable(tableRowsData);
+}
+
+function renderPeriodTable(rows) {
+    const tbody = document.getElementById("periodTableBody");
+    let html = "";
+
+    if (rows.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted">داده‌ای در این بازه زمانی یافت نشد.</td></tr>`;
+        return;
+    }
+
+    rows.forEach(row => {
+        const total = row.fa + row.en + row.ar;
+        html += `
+            <tr>
+                <td><strong>${row.label}</strong></td>
+                <td><span class="badge badge-total">${total.toLocaleString('fa-IR')}</span></td>
+                <td class="val-fa">${row.fa.toLocaleString('fa-IR')}</td>
+                <td class="val-en">${row.en.toLocaleString('fa-IR')}</td>
+                <td class="val-ar">${row.ar.toLocaleString('fa-IR')}</td>
+            </tr>
+        `;
+    });
+    tbody.innerHTML = html;
+}
+
+function exportTableToExcel() {
+    const table = document.getElementById("periodTableBody");
+    const rows = table.getElementsByTagName("tr");
+    let excelData = [["ردیف / بازه زمان", "بازدید کل", "بازدید فارسی", "بازدید انگلیسی", "بازدید عربی"]];
+
+    for (let i = 0; i < rows.length; i++) {
+        const cols = rows[i].getElementsByTagName("td");
+        if (cols.length === 5) {
+            excelData.push([
+                cols[0].innerText,
+                cols[1].innerText.replace(/,/g, ''),
+                cols[2].innerText.replace(/,/g, ''),
+                cols[3].innerText.replace(/,/g, ''),
+                cols[4].innerText.replace(/,/g, '')
+            ]);
+        }
+    }
+
+    const worksheet = XLSX.utils.aoa_to_sheet(excelData);
+    const workbook = XLSX.utils.book_new();
+    worksheet['!views'] = [{RTL: true}];
+    XLSX.utils.book_append_sheet(workbook, worksheet, "گزارش بازدید");
+
+    const selectedText = chartPeriodValue.options[chartPeriodValue.selectedIndex]?.text || "گزارش";
+    XLSX.writeFile(workbook, `گزارش_بازدید_${selectedText.replace(/ /g, "_")}.xlsx`);
+}
+</script>
+
+{% endif %}
+{% endblock %}
+
+{% block top_page %}
+<!-- مودال تحلیل آماری -->
+<div class="history-container modern-modal">
+    <div class="modal-header">
+        <h3 class="modal-title">تاریخچه و تحلیل آماری</h3>
+        <button class="close-btn" onclick="DeactivateTP(document.querySelector('.history-container')); DeactivateGP()">×</button>
+    </div>
+
+    <div class="history-modal-body">
+        <div class="filter-bar">
+            <div class="filter-item">
+                <label for="chartPeriodType">نوع بازه:</label>
+                <select id="chartPeriodType" class="form-select">
+                    <option value="monthly" selected>ماهانه</option>
+                    <option value="quarterly">سه ماهه</option>
+                    <option value="semi-annual">شش ماهه</option>
+                    <option value="yearly">سالانه</option>
+                </select>
+            </div>
+
+            <div class="filter-item">
+                <label for="chartPeriodValue">انتخاب زمان:</label>
+                <select id="chartPeriodValue" class="form-select"></select>
+            </div>
+        </div>
+
+        <div class="views-section">
+            <canvas id="viewsChart"></canvas>
+        </div>
+
+        <div class="period-table-container">
+            <div class="table-actions">
+                <h4>لیست تفکیکی بازه انتخابی</h4>
+                <button id="exportExcelBtn" class="btn btn-success export-btn">
+                    خروجی اکسل (Excel)
+                </button>
+            </div>
+            
+            <div class="table-responsive">
+                <table class="table custom-table">
+                    <thead>
+                        <tr>
+                            <th>بازه زمانی</th>
+                            <th>بازدید کل</th>
+                            <th>بازدید فارسی</th>
+                            <th>بازدید انگلیسی</th>
+                            <th>بازدید عربی</th>
+                        </tr>
+                    </thead>
+                    <tbody id="periodTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- مودال جزئیات پیشنهاد همکاری -->
+<div class="sug-modal-container modern-modal">
+    <div class="modal-header">
+        <h3 class="modal-title">جزئیات پیشنهاد همکاری</h3>
+        <button class="close-btn" onclick="DeactivateTP(document.querySelector('.sug-modal-container')); DeactivateGP()">×</button>
+    </div>
+    <div class="modal-body p-3">
+        <div class="row g-3">
+            <div class="col-md-6">
+                <strong>نام فرستنده:</strong>
+                <p id="sugModalName" class="text-muted mb-2">-</p>
+            </div>
+            <div class="col-md-6">
+                <strong>شماره تماس:</strong>
+                <p id="sugModalPhone" class="text-muted mb-2">-</p>
+            </div>
+            <div class="col-12">
+                <strong>نوع همکاری:</strong>
+                <p id="sugModalType" class="text-muted mb-2">-</p>
+            </div>
+            <div class="col-12">
+                <strong>توضیحات و داده‌های پیشنهاد:</strong>
+                <div id="sugModalData" class="p-3 bg-light rounded text-break mt-1"></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

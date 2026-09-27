@@ -1,0 +1,50 @@
+{% extends "general/persian/base.html" %}
+
+{% block head %}
+    <link rel="stylesheet" href="{{url_for('static', filename='css/general/product.css')}}">
+{% endblock %}
+
+{% block title %}
+    {{ p.product_name_fa }}
+{% endblock %}
+
+{% block body %}
+    <main class="product-detail-container">
+        <!-- دکمه بازگشت -->
+        <div class="breadcrumb-nav">
+            <a href="/products" class="back-link">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                بازگشت به لیست محصولات
+            </a>
+        </div>
+
+        <div class="product-card">
+            <!-- تصویر محصول -->
+            <div class="product-gallery">
+                <div class="image-wrapper">
+                    <img src="{{ url_for('static', filename='img/p_img/' + p.image_location) }}" alt="{{ p.product_name_fa }}" loading="lazy" />
+                </div>
+            </div>
+
+            <!-- اطلاعات محصول -->
+            <div class="product-details">
+                <h1 class="product-title">{{ p.product_name_fa }}</h1>
+                
+                <div class="product-divider"></div>
+
+                <div class="product-description-section">
+                    <h2 class="section-subtitle">توضیحات محصول</h2>
+                    <p class="product-description">
+                        {{ p.product_long_description_fa }}
+                    </p>
+                </div>
+
+                <!-- اکشن‌ها -->
+                <div class="product-actions">
+                    <a href="/customer-service" class="btn-primary">استعلام قیمت و مشاوره</a>
+                    <a href="/collaboration" class="btn-secondary">درخواست همکاری</a>
+                </div>
+            </div>
+        </div>
+    </main>
+{% endblock %}

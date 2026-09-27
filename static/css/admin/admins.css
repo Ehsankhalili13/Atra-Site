@@ -1,0 +1,561 @@
+/* ==========================================================
+   Admin Management Modern Redesign Styles
+   ========================================================== */
+
+.admins-main {
+  margin-right: var(--sidebar-width, 250px);
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  transition: margin-right 0.3s ease, padding 0.3s ease;
+}
+
+/* Header Section */
+.admins-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 20px;
+  background: var(--box-bg, #ffffff);
+  padding: 20px 24px;
+  border-radius: 16px;
+  border: 1px solid var(--border-color, rgba(0, 0, 0, 0.08));
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+}
+
+.admins-header .page-title {
+  font-size: 1.4rem;
+  font-weight: 800;
+  margin: 0;
+}
+
+.admins-header .page-subtitle {
+  font-size: 0.85rem;
+  opacity: 0.65;
+  margin-top: 4px;
+}
+
+.add-admin-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: linear-gradient(135deg, var(--site-main-color, #0088ff), var(--site-main2-color, #004fb7));
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 136, 255, 0.25);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.add-admin-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 136, 255, 0.35);
+}
+
+/* Stat Cards Grid */
+.admin-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 20px;
+}
+
+.admin-stats-grid .stat-card {
+  background: var(--box-bg, #ffffff);
+  border: 1px solid var(--border-color, rgba(0, 0, 0, 0.08));
+  padding: 22px 24px;
+  border-radius: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02);
+  transition: all 0.3s ease;
+}
+
+.admin-stats-grid .stat-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.06);
+}
+
+.admin-stats-grid .card-title {
+  font-size: 0.85rem;
+  opacity: 0.7;
+  display: block;
+  margin-bottom: 6px;
+}
+
+.admin-stats-grid .card-value {
+  font-size: 1.8rem;
+  font-weight: 800;
+}
+
+/* Table Card & Controls */
+.table-card {
+  background: var(--box-bg, #ffffff);
+  border: 1px solid var(--border-color, rgba(0, 0, 0, 0.08));
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+}
+
+.table-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.table-card-header h3 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.table-controls {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.search-box input,
+.filter-select {
+  min-width: 200px;
+  padding: 9px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border-color, #e5e7eb);
+  background-color: var(--body-bg-color, #fff);
+  color: var(--bs-body-color, #333);
+  font-size: 0.88rem;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.search-box input:focus,
+.filter-select:focus {
+  border-color: var(--site-main-color, #0088ff);
+  box-shadow: 0 0 0 3px rgba(0, 136, 255, 0.15);
+}
+
+/* Custom Modern Table */
+.custom-table {
+  width: 100%;
+  margin-bottom: 0;
+  text-align: center;
+  vertical-align: middle;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.custom-table th {
+  background: rgba(0, 0, 0, 0.02);
+  padding: 14px 18px;
+  font-weight: 700;
+  font-size: 0.88rem;
+  opacity: 0.85;
+  border-bottom: 2px solid var(--border-color, rgba(0, 0, 0, 0.05));
+}
+
+body.dark .custom-table th {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.custom-table td {
+  padding: 16px;
+  border-bottom: 1px solid var(--border-color, rgba(0, 0, 0, 0.05));
+  font-size: 0.9rem;
+}
+
+.custom-table tbody tr {
+  transition: background-color 0.2s ease;
+}
+
+.custom-table tbody tr:hover {
+  background-color: rgba(0, 136, 255, 0.02);
+}
+
+body.dark .custom-table tbody tr:hover {
+  background-color: rgba(255, 255, 255, 0.02);
+}
+
+/* User Avatar & Info */
+.user-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  text-align: right;
+}
+
+.user-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--site-main-color, #0088ff), var(--site-main2-color, #004fb7));
+  color: #fff;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.95rem;
+  flex-shrink: 0;
+  box-shadow: 0 3px 8px rgba(0, 136, 255, 0.2);
+}
+
+.user-username {
+  font-weight: 700;
+  font-size: 0.9rem;
+  font-family: 'Vazirmatn', Arial !important;
+}
+
+.user-username small {
+  font-family: 'Vazirmatn', Arial !important;
+}
+
+/* Role Badges */
+.role-badge {
+  padding: 5px 12px;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.role-super {
+  background-color: rgba(239, 68, 68, 0.12);
+  color: #ef4444;
+}
+
+.role-admin {
+  background-color: rgba(0, 136, 255, 0.12);
+  color: var(--site-main-color, #0088ff);
+}
+
+/* Password Box & Eye Switch */
+.password-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+  max-width: 180px;
+  margin: 0 auto;
+}
+
+.password-box input {
+  padding-left: 32px;
+  font-family: monospace;
+  font-size: 0.82rem;
+  text-align: center;
+  border-radius: 8px;
+}
+
+.toggle-pw-btn {
+  position: absolute;
+  left: 6px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.9rem;
+  opacity: 0.6;
+  padding: 4px;
+  transition: opacity 0.2s ease;
+}
+
+.toggle-pw-btn:hover {
+  opacity: 1;
+}
+
+/* Actions Cell */
+.actions-cell {
+  white-space: nowrap;
+}
+
+.btn-action {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 6px 8px;
+  margin: 0 2px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  font-size: 1rem;
+}
+
+.btn-action:hover {
+  background: rgba(0, 0, 0, 0.05);
+  transform: scale(1.1);
+}
+
+body.dark .btn-action:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Modern Glassmorphism Modals */
+.modern-modal {
+  background: var(--box-bg, #ffffff);
+  border: 1px solid var(--border-color, rgba(0, 0, 0, 0.1));
+  border-radius: 20px;
+  padding: 24px;
+  width: 92%;
+  max-width: 580px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(10px);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 16px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--border-color, rgba(0, 0, 0, 0.06));
+}
+
+.modal-title {
+  font-size: 1.15rem;
+  font-weight: 800;
+  margin: 0;
+}
+
+.close-btn {
+  background: rgba(0, 0, 0, 0.04);
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  font-size: 1.2rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease;
+}
+
+.close-btn:hover {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+
+/* Form & Permissions Checklist Grid */
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  text-align: right;
+}
+
+.form-group.full-width {
+  grid-column: span 2;
+}
+
+.form-group label {
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.form-group input {
+  outline: none;
+  padding: 5px;
+  border: 1px solid;
+  border-radius: 8px;
+}
+
+.permissions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 10px;
+  margin-top: 6px;
+  background: rgba(0, 0, 0, 0.02);
+  border: 1px solid var(--border-color, rgba(0, 0, 0, 0.06));
+  padding: 14px;
+  border-radius: 12px;
+}
+
+body.dark .permissions-grid {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.perm-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+.perm-item input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--site-main-color, #0088ff);
+  cursor: pointer;
+}
+
+/* Modal Footer Buttons */
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-color, rgba(0, 0, 0, 0.06));
+}
+
+.btn-secondary {
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--bs-body-color, #333);
+  border: none;
+  padding: 9px 18px;
+  border-radius: 10px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-success,
+.btn-primary {
+  background: var(--site-main-color, #0088ff);
+  color: #fff;
+  border: none;
+  padding: 9px 20px;
+  border-radius: 10px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 136, 255, 0.25);
+  transition: background 0.2s ease;
+}
+
+.btn-success:hover,
+.btn-primary:hover {
+  background: var(--site-main2-color, #004fb7);
+}
+
+/* ==========================================================
+   تغییرات تکمیلی جهت بهینه‌سازی کامل در حالت موبایل
+   ========================================================== */
+
+@media (max-width: 768px) {
+
+  /* ۱. هدر اصلی صفحه */
+  .admins-header {
+    flex-direction: column;
+    align-items: stretch;
+    text-align: center;
+    gap: 12px;
+    padding: 16px;
+  }
+
+  .add-admin-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* ۲. کارت‌های آمار به صورت یک ستونه */
+  .admin-stats-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  /* ۳. کنترل‌های بالای جدول */
+  .table-card {
+    padding: 16px 12px;
+  }
+
+  .table-card-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .table-controls {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .search-box,
+  .filter-group {
+    width: 100%;
+  }
+
+  .search-box input,
+  .filter-select {
+    width: 100%;
+    min-width: unset;
+  }
+
+  /* ۴. اسکرول افقی روان برای جدول */
+  .table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin: 0 -12px;
+    padding: 0 12px;
+  }
+
+  .custom-table {
+    min-width: 600px;
+    /* جلوگیری از بهم ریختگی ستون‌ها */
+  }
+
+  .custom-table th,
+  .custom-table td {
+    padding: 10px 8px;
+    font-size: 0.82rem;
+  }
+
+  .user-cell {
+    gap: 8px;
+  }
+
+  .user-avatar {
+    width: 32px;
+    height: 32px;
+    font-size: 0.85rem;
+  }
+
+  .password-box {
+    max-width: 130px;
+  }
+
+  /* ۵. بهینه‌سازی فرم‌ها و مودال‌ها در موبایل */
+  .modern-modal {
+    width: 95%;
+    padding: 16px;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .form-group.full-width {
+    grid-column: span 1;
+  }
+
+  .permissions-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .modal-footer {
+    flex-direction: column-reverse;
+    gap: 8px;
+  }
+
+  .modal-footer .btn {
+    width: 100%;
+  }
+}

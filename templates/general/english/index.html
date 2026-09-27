@@ -1,0 +1,142 @@
+{% extends "general/english/base.html" %}
+
+{% block head %}
+<link rel="stylesheet" href="{{url_for('static', filename='css/general/index.css')}}">
+{% endblock %}
+
+{% block title %}
+Home
+{% endblock %}
+
+{% block body %}
+
+<main>
+    <div id="carousel" class="carousel slide carousel-fade slideshow" data-bs-ride="carousel" data-bs-interval="3500">
+        <div class="carousel-indicators">
+            {% for slide in slides %}
+            <button type="button" data-bs-target="#carousel" data-bs-slide-to="{{ loop.index0 }}"
+                class="{% if loop.first %}active{% endif %}" aria-current="{% if loop.first %}true{% endif %}"
+                aria-label="Slide {{ loop.index }}"></button>
+            {% endfor %}
+        </div>
+
+        <div class="carousel-inner">
+            {% for slide in slides %}
+            <div class="carousel-item {% if loop.first %}active{% endif %}">
+                <div class="slide-bg"
+                    style="background-image: url('/static/img/slideshow/{{slide.slide_img_location}}')"></div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <button class="carousel-control-prev" type="button" data-bs-target="#carousel" data-bs-slide="prev">
+            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Previous</span>
+        </button>
+
+        <button class="carousel-control-next" type="button" data-bs-target="#carousel" data-bs-slide="next">
+            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Next</span>
+        </button>
+    </div>
+
+    <section class="main-container">
+
+        <section class="achievements-section">
+            <div class="achievements-container">
+
+                <div class="achievement-item">
+                    <div class="achievement-icon-wrapper">
+                        <img src="{{url_for('static', filename='theme-image/experience.svg')}}"
+                            alt="Years of Experience Icon" class="achievement-icon">
+                    </div>
+                    <div class="achievement-content">
+                        <span class="achievement-number">35<span class="plus-sign">+</span></span>
+                        <p class="achievement-label">Years of experience</p>
+                    </div>
+                </div>
+
+                <div class="achievement-item">
+                    <div class="achievement-icon-wrapper">
+                        <img src="{{url_for('static', filename='theme-image/earth-globe.svg')}}"
+                            alt="Export Icon" class="achievement-icon">
+                    </div>
+                    <div class="achievement-content">
+                        <span class="achievement-number">Export</span>
+                        <p class="achievement-label">To abroad</p>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <section class="iso-container">
+            <div class="atra-iso-band">
+                <div class="atra-iso-track">
+
+                    {% for achievement in achievements %}
+                    <div class="iso-mini-card">
+                        <div class="iso-mini-img-wrapper">
+                            <img src="{{ url_for('static', filename='img/achievements_pic/' + achievement.achievement_img) }}"
+                                alt="{{ achievement.achievement_code }}">
+                        </div>
+                        <h4 class="iso-mini-title">{{ achievement.achievement_name_en }}</h4>
+                        <p class="iso-mini-sub">{{ achievement.achievement_code }}</p>
+                    </div>
+                    {% endfor %}
+
+                </div>
+            </div>
+        </section>
+
+        <div class="custom-divider line1"></div>
+
+        <section class="about" id="about">
+            <h2 class="about__title about__title_en">Atra Company, a leader in the production of home appliances</h2>
+            
+            <div class="about-content-wrapper">
+                <div class="gallery-container">
+
+                    <!-- Left -->
+                    <div class="card card-left">
+                        <img src="{{url_for('static', filename='img/pic2.jpg')}}" alt="Atra Gallery Image 1">
+                    </div>
+
+                    <!-- Center -->
+                    <div class="card card-main">
+                        <img src="{{url_for('static', filename='img/pic1.jpg')}}" alt="Atra Gallery Main Image">
+                    </div>
+
+                    <!-- Right -->
+                    <div class="card card-right">
+                        <img src="{{url_for('static', filename='img/pic3.jpg')}}" alt="Atra Gallery Image 2">
+                    </div>
+
+                </div>
+
+                <p class="short_about_description">
+                    Atra Golfer Industrial Production Group began its activities in 1991 under the name Atra Production Group and has continued its growth and development path with strength over the years, relying on experience, technical knowledge and a forward-looking outlook. By establishing a factory in the Parand Industrial Zone of Tehran, this complex took an important step towards producing high-quality Iranian products in the field of home appliances and was able to gain a worthy position in this industry.
+                    With more than 35 years of brilliant history, Atra Golfer has always operated based on principles such as quality, durability, safety, innovation and customer satisfaction, and in this regard, has prioritized the production of products such as kerosene heaters and cooking stoves. The use of specialized manpower, appropriate equipment and precise control of production processes have led to the company's products having a reliable standard.
+                    With a professional and development-oriented approach, this complex is not limited to the domestic market only and proudly exports to Iraq; an action that demonstrates the acceptable quality of its products and the trust of regional markets in the name of Atra Golfer.
+                    Today, Atra Golfer Industrial Production Group, relying on the valuable heritage of the past and the bright future outlook, is taking steps to continuously improve its products, expand its target markets, and establish its position as a reputable and reliable brand in the home appliance industry.
+                </p>
+            </div>
+        </section>
+
+        <div class="custom-divider line2"></div>
+
+    </section>
+
+</main>
+
+{% endblock %}
+
+{% block script %}
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        if (typeof ActiveNavLinkPage === "function") {
+            ActiveNavLinkPage("#homePage");
+        }
+    });
+</script>
+{% endblock %}

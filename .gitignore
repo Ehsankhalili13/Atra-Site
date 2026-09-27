@@ -1,0 +1,11 @@
+.__pycache__
+/__pycache__
+/blueprint/__pycache__
+.idea
+.venv
+.ignore
+main.py
+run.bat
+/.cloud/
+.cloud/
+/.cloud

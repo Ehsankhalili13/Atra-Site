@@ -1,0 +1,142 @@
+{% extends "general/arabic/base.html" %}
+
+{% block head %}
+<link rel="stylesheet" href="{{url_for('static', filename='css/general/index.css')}}">
+{% endblock %}
+
+{% block title %}
+الرئيسية
+{% endblock %}
+
+{% block body %}
+
+<main>
+    <div id="carousel" class="carousel slide carousel-fade slideshow" data-bs-ride="carousel" data-bs-interval="3500">
+        <div class="carousel-indicators">
+            {% for slide in slides %}
+            <button type="button" data-bs-target="#carousel" data-bs-slide-to="{{ loop.index0 }}"
+                class="{% if loop.first %}active{% endif %}" aria-current="{% if loop.first %}true{% endif %}"
+                aria-label="الشريحة {{ loop.index }}"></button>
+            {% endfor %}
+        </div>
+
+        <div class="carousel-inner">
+            {% for slide in slides %}
+            <div class="carousel-item {% if loop.first %}active{% endif %}">
+                <div class="slide-bg"
+                    style="background-image: url('/static/img/slideshow/{{slide.slide_img_location}}')"></div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <button class="carousel-control-prev" type="button" data-bs-target="#carousel" data-bs-slide="prev">
+            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">السابق</span>
+        </button>
+
+        <button class="carousel-control-next" type="button" data-bs-target="#carousel" data-bs-slide="next">
+            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">التالي</span>
+        </button>
+    </div>
+
+    <section class="main-container">
+
+        <section class="achievements-section">
+            <div class="achievements-container">
+
+                <div class="achievement-item">
+                    <div class="achievement-icon-wrapper">
+                        <img src="{{url_for('static', filename='theme-image/experience.svg')}}"
+                            alt="أيقونة سنوات الخبرة" class="achievement-icon">
+                    </div>
+                    <div class="achievement-content">
+                        <span class="achievement-number">35<span class="plus-sign">+</span></span>
+                        <p class="achievement-label">سنوات من الخبرة</p>
+                    </div>
+                </div>
+
+                <div class="achievement-item">
+                    <div class="achievement-icon-wrapper">
+                        <img src="{{url_for('static', filename='theme-image/earth-globe.svg')}}"
+                            alt="أيقونة التصدير" class="achievement-icon">
+                    </div>
+                    <div class="achievement-content">
+                        <span class="achievement-number">تصدير</span>
+                        <p class="achievement-label">إلى الخارج</p>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <section class="iso-container">
+            <div class="atra-iso-band">
+                <div class="atra-iso-track">
+
+                    {% for achievement in achievements %}
+                    <div class="iso-mini-card">
+                        <div class="iso-mini-img-wrapper">
+                            <img src="{{ url_for('static', filename='img/achievements_pic/' + achievement.achievement_img) }}"
+                                alt="{{ achievement.achievement_code }}">
+                        </div>
+                        <h4 class="iso-mini-title">{{ achievement.achievement_name_ar }}</h4>
+                        <p class="iso-mini-sub">{{ achievement.achievement_code }}</p>
+                    </div>
+                    {% endfor %}
+
+                </div>
+            </div>
+        </section>
+
+        <div class="custom-divider line1"></div>
+
+        <section class="about" id="about">
+            <h2 class="about__title">شركة أترا، شركة رائدة في إنتاج الأجهزة المنزلية</h2>
+            
+            <div class="about-content-wrapper">
+                <div class="gallery-container">
+
+                    <!-- right -->
+                    <div class="card card-left">
+                        <img src="{{url_for('static', filename='img/pic2.jpg')}}" alt="صورة المعرض 1">
+                    </div>
+
+                    <!-- center -->
+                    <div class="card card-main">
+                        <img src="{{url_for('static', filename='img/pic1.jpg')}}" alt="الصورة الرئيسية المعرض">
+                    </div>
+
+                    <!-- left -->
+                    <div class="card card-right">
+                        <img src="{{url_for('static', filename='img/pic3.jpg')}}" alt="صورة المعرض 2">
+                    </div>
+
+                </div>
+
+                <p class="short_about_description">
+                    بدأت مجموعة أترا غولفر الصناعية للإنتاج نشاطها عام ١٩٩١ تحت اسم مجموعة أترا للإنتاج، وواصلت مسيرتها نحو النمو والتطور بقوة على مر السنين، معتمدةً على الخبرة والمعرفة التقنية والرؤية المستقبلية. وبإنشاء مصنعها في منطقة باراند الصناعية بطهران، خطت هذه المجموعة خطوة هامة نحو إنتاج منتجات إيرانية عالية الجودة في مجال الأجهزة المنزلية، وتمكنت من تبوّء مكانة مرموقة في هذا القطاع.
+                    على مدار أكثر من ٣٥ عامًا من التاريخ الحافل بالإنجازات، عملت أترا غولفر دائمًا وفقًا لمبادئ الجودة والمتانة والسلامة والابتكار ورضا العملاء، وفي هذا السياق، أولت اهتمامًا خاصًا لإنتاج منتجات مثل السخانات ومواقد الزيت. وقد أدى استخدام الكوادر المتخصصة والمعدات المناسبة والتحكم الدقيق في عمليات الإنتاج إلى تميز منتجات الشركة بمعايير موثوقة.
+                    بفضل نهجها الاحترافي والتطويري، لم تقتصر هذه المجموعة على السوق المحلية فحسب، بل تفخر أيضاً بتصدير منتجاتها إلى العراق؛ وهي خطوة تعكس الجودة العالية للمنتجات وتؤكد ثقة أسواق المنطقة باسم "أترا غولفر".
+                    اليوم، تتخذ مجموعة أترا غولفر الصناعية للإنتاج، بالاعتماد على الإرث القيّم للماضي ورؤية واضحة للمستقبل، خطوات نحو التحسين المستمر لمنتجاتها، وتوسيع أسواقها المستهدفة، وترسيخ مكانتها كعلامة تجارية ذات سمعة طيبة وموثوقة في صناعة الأجهزة المنزلية.
+                </p>
+            </div>
+        </section>
+
+        <div class="custom-divider line2"></div>
+
+    </section>
+
+</main>
+
+{% endblock %}
+
+{% block script %}
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        if (typeof ActiveNavLinkPage === "function") {
+            ActiveNavLinkPage("#homePage");
+        }
+    });
+</script>
+{% endblock %}

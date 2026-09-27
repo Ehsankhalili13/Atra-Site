@@ -1,0 +1,73 @@
+{% extends "general/arabic/base.html" %}
+
+{% block head %}
+<link rel="stylesheet" href="{{url_for('static', filename='css/general/about_us.css')}}">
+ {% endblock %}
+
+{% block title %}
+من نحن
+{% endblock %}
+
+{% block body %}
+<main>
+    <div id="about">
+        <h2 class="title">من نحن</h2>
+        <div class="description">{{ sd }}</div>
+    </div>
+    <div id="contact-us">
+        <div class="contact-widget-card" id="contactWidgetCard">
+            <div>
+                <div class="widget-header">
+                    <h3 class="widget-title">
+                        <i class="fa-solid fa-headset"></i>
+                        طرق التواصل معنا
+                    </h3>
+                </div>
+                
+                <div class="info-list">
+                    <div class="info-item-text">
+                        <div class="info-item">
+                            <i class="fa-solid fa-location-dot"></i>
+                            <div><strong>العنوان:</strong> طهران، مدينة پرند الصناعية، شارع غُا آرا، رقم ۶۳</div>
+                        </div>
+                        <div class="info-item">
+                            <i class="fa-solid fa-clock"></i>
+                            <div><strong>ساعات العمل:</strong> من السبت إلى الأربعاء من ٩:۰۰ حتى ۱۸:۰۰</div>
+                        </div>
+                    </div>
+                    <div class="iframe_container">
+                        <iframe title="map-iframe"
+                            src="https://neshan.org/maps/iframe/places/_bQGH5YxAgn7#c35.443-51.016-19z-0p/35.442835237990835/51.01600838931674"
+                            allowFullScreen loading="lazy"></iframe>
+                    </div>
+                </div>
+            </div>
+    
+            <div class="messengers-grid">
+                <a href="https://instagram.com/atra_golfer" target="_blank" class="messenger-btn btn-instagram">
+                    <i class="fa-brands fa-instagram"></i> إنستغرام
+                </a>
+                <a href="https://ble.ir/atra_golfer_bot" target="_blank" class="messenger-btn btn-bale">
+                    <i class="fa-solid fa-paper-plane"></i> بله
+                </a>
+                <a href="https://wa.me/989194074071" target="_blank" class="messenger-btn btn-whatsapp">
+                    <i class="fa-brands fa-whatsapp"></i> واتساب
+                </a>
+                <a href="mailto:info@atra-golfer.com" class="messenger-btn btn-email">
+                    <i class="fa-solid fa-envelope"></i> البريد الإلكتروني
+                </a>
+                <a href="tel:02153267" class="messenger-btn btn-phone">
+                    <i class="fa-solid fa-phone"></i> الاتصال المباشر: <bdi>۰۲۱ ۵۳۲۶۷</bdi>
+                </a>
+            </div>
+        </div>
+    </div>
+
+</main>
+{% endblock %}
+
+{% block script %}
+<script>
+    document.addEventListener("DOMContentLoaded", ActiveNavLinkPage("#aboutPage"))
+</script>
+{% endblock %}

@@ -1,0 +1,106 @@
+:root {
+    --bg-color: #f4f4f9;
+    --card-bg: #ffffff80;
+    --text-color: #333;
+    --input-bg: #eaeaea;
+}
+
+body.dark {
+    --bg-color: #1a1a1a;
+    --card-bg: #2e2e2e80;
+    --text-color: #f0f0f0;
+    --input-bg: #3d3d3d;
+}
+
+.form-container {
+    width: 100%;
+    max-width: 400px;
+    margin: auto;
+    padding: 30px;
+    
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.05));
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+  
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 20px;
+    
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2),
+                inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+body.dark .form-container {
+    /* background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02)); */
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5),
+                inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+h2,
+p {
+    text-align: center;
+}
+
+input,
+textarea,
+select {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    border: none;
+    outline: none;
+    border-radius: 8px;
+    background: var(--input-bg);
+    color: var(--text-color);
+    direction: rtl;
+}
+
+textarea {
+    resize: none;
+}
+
+#space {
+    width: 20px;
+    height: 5px;
+    display: inline-block;
+}
+
+button.submit {
+    width: 100%;
+    margin-top: 10px;
+    padding: 12px;
+    background: var(--site-main-color);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 500ms;
+}
+
+button.submit:hover {
+    transform: translateY(-10px);
+    background-color: var(--site-main2-color);
+    box-shadow: var(--site-main-shadow);
+}
+
+/* Remove Spinners Button */
+/* In Edge , Safari , Chrome */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+/* In Firefox */
+input[type=number] {
+    -moz-appearance: textfield;
+}
+
+@media (max-width:400px) {
+    .form-container {
+        width: fit-content;
+        max-width: none;
+        margin: 0 10px;
+    }
+}

@@ -1,0 +1,39 @@
+<div class="lang-switcher" id="langSwitcher">
+    <button class="lang-btn" onclick="toggleLangMenu(event)">
+        <span class="selected-flag" id="currentFlag">
+            <!-- Default Flag -->
+            <img class="flag-icon" src="{{ url_for('static', filename='theme-image/english.svg') }}">
+        </span>
+        <span class="lang-text">EN</span>
+        <svg class="chevron-icon" viewBox="0 0 24 24" width="14" height="14">
+            <path d="M7 10l5 5 5-5H7z" fill="currentColor" />
+        </svg>
+    </button>
+
+    <ul class="lang-dropdown">
+        <!-- English -->
+        <li>
+            <a href="javascript:void(0)" onclick="return;">
+                <img class="flag-icon" src="{{ url_for('static', filename='theme-image/english.svg') }}">
+                <span>English</span>
+            </a>
+        </li>
+
+        <!-- Persian -->
+        <li class="rtl-item" onclick="changeLangRoot(event, '/fa')">
+            <a href="#">
+                <img class="flag-icon" src="{{ url_for('static', filename='theme-image/iran.svg') }}">
+                <span>فارسی</span>
+            </a>
+        </li>
+
+        <!-- Arabic -->
+        <li class="rtl-item"  onclick="changeLangRoot(event, '/ar')">
+            <a href="#">
+                <img class="flag-icon" src="{{ url_for('static', filename='theme-image/arabic.svg') }}">
+
+                <span>العربية</span>
+            </a>
+        </li>
+    </ul>
+</div>

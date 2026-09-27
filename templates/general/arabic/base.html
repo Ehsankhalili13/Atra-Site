@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="تنشط شركة آترا غولفر منذ سنوات في مجال تصنيع الأجهزة المنزلية، بما في ذلك السخانات الكهربائية والنفطية، ومختلف أنواع الأفران الكهربائية، وطباخات النفط.">
+    <link rel="stylesheet" href="{{url_for('static', filename='css/general/base.css')}}">
+    <link rel="stylesheet" href="{{url_for('static', filename='css/bootstrap.min.css')}}">
+    {% block head %}{% endblock %}
+    <title>شركة أترا | {% block title %}{% endblock %}</title>
+
+    {% block seo %}
+        <link rel="canonical" href="https://atra-golfer.com{{ request.path }}" />
+    {% endblock %}
+</head>
+
+<body>
+    <div class="alert" id="alert"></div>
+
+    <nav class="navbar">
+        <div class="nav__container">
+            <p class="site_title">أترا</p>
+
+            <button class="menu-toggle" id="menuToggle">
+                ☰
+            </button>
+
+            <div class="links" id="navLinks">
+                <a href="/ar/" id="homePage" class="nav__links">الرئيسية</a>
+                <a href="/ar/about-us" id="aboutPage" class="nav__links">من نحن</a>
+                <a href="/ar/products" id="productsPage" class="nav__links">منتجاتنا</a>
+                <a href="/ar/customer-service" id="customerPage" class="nav__links">خدمة العملاء</a>
+                <a href="/ar/ai" id="AiPage" class="nav__links nl_ai_agent">الذكاء الاصطناعي</a>
+
+                {% include "general/arabic/lang_change.html" %}
+
+                <button class="change__site__theme" id="theme-switcher">
+                    <img src="" id="ts-img" alt="theme">
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    {% block body %}{% endblock %}
+
+    <footer>
+        <div class="footer_link">
+            <a href="/ar/" id="homePage" class="nav__links">الرئيسية</a>
+            <a href="/ar/about-us" id="aboutPage" class="nav__links">من نحن</a>
+            <a href="/ar/products" id="productsPage" class="nav__links">منتجاتنا</a>
+            <a href="/ar/customer-service" id="customerPage" class="nav__links">خدمة العملاء</a>
+        </div>
+        {% include "part/footer_change_lang.html" %}
+        <p>
+            جميع الحقوق محفوظة © | شركة أترا
+        </p>
+    </footer>
+
+    <script src="{{url_for('static', filename='js/modules.js')}}"></script>
+    <script src="{{url_for('static', filename='js/bootstrap.min.js')}}"></script>
+    <script src="{{url_for('static', filename='js/theme-modules.js')}}"></script>
+    <script>
+        const urlMoonIcon = "{{ url_for('static', filename='theme-image/icon-moon.svg') }}";
+        const urlSunIcon = "{{ url_for('static', filename='theme-image/icon-sun.svg') }}";
+    </script>
+    <script>
+        const menuToggle = document.getElementById("menuToggle");
+        const navLinks = document.getElementById("navLinks");
+        const switcher = document.getElementById('langSwitcher');
+      
+        menuToggle.addEventListener("click", (event) => {
+            navLinks.classList.toggle("active");
+            event.stopPropagation();
+        });
+
+        const closeAllMenus = () => {
+            if (navLinks.classList.contains("active")) {
+                navLinks.classList.remove("active");
+            }
+            if (switcher && switcher.classList.contains('open')) {
+                switcher.classList.remove('open');
+            }
+        };
+
+        document.addEventListener("click", (event) => {
+            if (navLinks.classList.contains("active") && !navLinks.contains(event.target) && !menuToggle.contains(event.target)) {
+                navLinks.classList.remove("active");
+            }
+        });
+
+        window.addEventListener("scroll", closeAllMenus, true);
+  </script>
+
+  <script>
+        function toggleLangMenu(event) {
+            event.stopPropagation();
+            const switcher = document.getElementById('langSwitcher');
+            switcher.classList.toggle('open');
+        }
+  </script>
+
+    {% block script %}{% endblock %}
+</body>
+
+</html>

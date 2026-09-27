@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Atra Golfer has been active for years in manufacturing home appliances, including electric and kerosene heaters, various electric ovens, and kerosene cookers.">
+    <link rel="stylesheet" href="{{url_for('static', filename='css/general/base.css')}}">
+    <link rel="stylesheet" href="{{url_for('static', filename='css/bootstrap.min.css')}}">
+    <style>
+        .site_title {
+            font-weight: 600;
+            text-align: left;
+        }
+    </style>
+    {% block head %}{% endblock %}
+    <title>Atra Company | {% block title %}{% endblock %}</title>
+    
+    {% block seo %}
+        <link rel="canonical" href="https://atra-golfer.com{{ request.path }}" />
+    {% endblock %}
+</head>
+
+<body>
+    <div class="alert" id="alert"></div>
+
+    <nav class="navbar">
+        <div class="nav__container">
+            <p class="site_title">Atra</p>
+
+            <button class="menu-toggle" id="menuToggle">
+                ☰
+            </button>
+
+            <div class="links" id="navLinks">
+                <a href="/en/" id="homePage" class="nav__links">Home</a>
+                <a href="/en/about-us" id="aboutPage" class="nav__links">About Us</a>
+                <a href="/en/products" id="productsPage" class="nav__links">Products</a>
+                <a href="/en/customer-service" id="customerPage" class="nav__links">Customer Service</a>
+                <a href="/en/ai" id="AiPage" class="nav__links nl_ai_agent">Artificial Intelligence</a>
+              
+                {% include "general/english/lang_change.html" %}
+
+                <button class="change__site__theme" id="theme-switcher">
+                    <img src="" id="ts-img" alt="theme">
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    {% block body %}{% endblock %}
+
+    <footer>
+        <div class="footer_link">
+            <a href="/en/" id="homePage" class="nav__links">Home</a>
+            <a href="/en/about-us" id="aboutPage" class="nav__links">About Us</a>
+            <a href="/en/products" id="productsPage" class="nav__links">Products</a>
+            <a href="/en/customer-service" id="customerPage" class="nav__links">Customer Affairs</a>
+        </div>
+        {% include "part/footer_change_lang.html" %}
+        <p>
+            All rights reserved © | Atra Company
+        </p>
+    </footer>
+
+    <script src="{{url_for('static', filename='js/modules.js')}}"></script>
+    <script src="{{url_for('static', filename='js/bootstrap.min.js')}}"></script>
+    <script src="{{url_for('static', filename='js/theme-modules.js')}}"></script>
+    <script>
+        const urlMoonIcon = "{{ url_for('static', filename='theme-image/icon-moon.svg') }}";
+        const urlSunIcon = "{{ url_for('static', filename='theme-image/icon-sun.svg') }}";
+    </script>
+    <script>
+        const menuToggle = document.getElementById("menuToggle");
+        const navLinks = document.getElementById("navLinks");
+        const switcher = document.getElementById('langSwitcher');
+      
+        menuToggle.addEventListener("click", (event) => {
+            navLinks.classList.toggle("active");
+            event.stopPropagation();
+        });
+
+        const closeAllMenus = () => {
+            if (navLinks.classList.contains("active")) {
+                navLinks.classList.remove("active");
+            }
+            if (switcher && switcher.classList.contains('open')) {
+                switcher.classList.remove('open');
+            }
+        };
+
+        document.addEventListener("click", (event) => {
+            if (navLinks.classList.contains("active") && !navLinks.contains(event.target) && !menuToggle.contains(event.target)) {
+                navLinks.classList.remove("active");
+            }
+        });
+
+        window.addEventListener("scroll", closeAllMenus, true);
+  </script>
+
+  <script>
+        function toggleLangMenu(event) {
+            event.stopPropagation();
+            const switcher = document.getElementById('langSwitcher');
+            switcher.classList.toggle('open');
+        }
+  </script>
+
+    {% block script %}{% endblock %}
+</body>
+
+</html>

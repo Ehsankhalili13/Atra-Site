@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/general/base.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin/login.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
+    <script src="{{url_for('static', filename='js/modules.js')}}"></script>
+    <title>ورود به پنل مدیریت</title>
+</head>
+<body>
+    <div class="alert" id="alert"></div>
+
+    <button class="change__site__theme" id="theme-switcher">
+        <img src="" id="ts-img" alt="theme">
+    </button>
+
+    {% with msg = get_flashed_messages(with_categories=true) %}
+        {% if msg %}
+            {% for c, m in msg %}
+                <script>
+                    showAlert("{{m}}", "{{c}}")
+                </script>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <section class="login-container">
+        <div class="texts">
+            <h2 class="text title">ورود به پنل مدیریت</h2>
+            <p class="text description">از طریق این پنل می توانید به تنظیمات سایت سترسی داشته باشید.</p>
+        </div>
+        <form class="form">
+            <div class="form-control input-div">
+                <input class="input input-alt" id="username" name="username" placeholder="نام کاربری" required>
+                <span class="input-border input-border-alt"></span>
+            </div>
+            <br>
+            <div class="form-control input-div">
+                <input type="password" class="input input-alt" id="password" name="password" placeholder="رمز عبور"
+                    required>
+                <span class="input-border input-border-alt"></span>
+            </div>
+            <br>
+            <input type="submit" value="ورود" class="btn-sub">
+        </form>
+    </section>
+
+    <script src="{{url_for('static', filename='js/theme-modules.js')}}"></script>
+    <script>
+        const urlMoonIcon = "{{ url_for('static', filename='theme-image/icon-moon.svg') }}";
+        const urlSunIcon = "{{ url_for('static', filename='theme-image/icon-sun.svg') }}";
+    </script>
+    <script>
+        document.querySelector(".form").addEventListener("submit", async (e) => {
+            e.preventDefault()
+
+            const request = await (await fetch("/api/admin-login-api", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ "username": e.target.username.value, "password": e.target.password.value })
+            })).json()
+
+            showAlert(request.message, request.type)
+
+            if (request.message == "ورود با موفقیت انجام شد.") {
+                location.href = "/atra-site/admin"
+            }
+            if (request.error) {
+                console.error(request.error)
+            }
+        })
+    </script>
+</body>
+</html>

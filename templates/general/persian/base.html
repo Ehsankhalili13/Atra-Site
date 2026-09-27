@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description"
+    content="شرکت آترا گلفر سال ها در زمینه ساخت لوازم خانگی از جمله بخاری های برقی و نفتی ، انواع فر های برقی ، و خوراک پز های نفتی فعالیت داشته است.">
+  <link rel="stylesheet" href="{{url_for('static', filename='css/general/base.css')}}">
+  <link rel="stylesheet" href="{{url_for('static', filename='css/bootstrap.min.css')}}">
+  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='img/favicon.ico') }}?v=1.1">
+  {% block head %}{% endblock %}
+  <title>شرکت آترا | {% block title %}{% endblock %}</title>
+
+  {% block seo %}
+  <link rel="canonical" href="https://atra-golfer.com{{ request.path }}" />
+  {% endblock %}
+</head>
+
+<body>
+  <div class="alert" id="alert"></div>
+
+  <nav class="navbar">
+    <div class="nav__container">
+      <p class="site_title">آترا</p>
+
+      <button class="menu-toggle" id="menuToggle" aria-label="باز کردن منو">
+        ☰
+      </button>
+
+      <div class="links" id="navLinks">
+        <a href="/" id="homePage" class="nav__links">خانه</a>
+        <a href="/about-us" id="aboutPage" class="nav__links">درباره ما</a>
+        <a href="/products" id="productsPage" class="nav__links">محصولات ما</a>
+        <a href="/customer-service" id="customerPage" class="nav__links">امور مشتریان</a>
+        <a href="/collaboration" id="collaborationPage" class="nav__links">درخواست همکاری</a>
+        <a href="/ai" id="AiPage" class="nav__links nl_ai_agent">هوش مصنوعی</a>
+
+        {% include "general/persian/lang_change.html" %}
+
+        <button class="change__site__theme" id="theme-switcher">
+          <img src="" id="ts-img" alt="theme">
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  {% block body %}{% endblock %}
+
+  <footer>
+    <div class="footer_link">
+      <a href="/" class="nav__links">خانه</a>
+      <a href="/about-us" class="nav__links">درباره ما</a>
+      <a href="/products" class="nav__links">محصولات ما</a>
+      <a href="/customer-service" class="nav__links">امور مشتریان</a>
+      <a href="/collaboration" class="nav__links">درخواست همکاری</a>
+    </div>
+    {% include "part/footer_change_lang.html" %}
+    <p>
+      تمام حقوق محفوظ است © | شرکت آترا
+    </p>
+  </footer>
+
+  <script src="{{url_for('static', filename='js/modules.js')}}"></script>
+  <script src="{{url_for('static', filename='js/bootstrap.min.js')}}"></script>
+  <script src="{{url_for('static', filename='js/theme-modules.js')}}"></script>
+  <script>
+        const urlMoonIcon = "{{ url_for('static', filename='theme-image/icon-moon.svg') }}";
+        const urlSunIcon = "{{ url_for('static', filename='theme-image/icon-sun.svg') }}";
+    </script>
+    <script>
+        const menuToggle = document.getElementById("menuToggle");
+        const navLinks = document.getElementById("navLinks");
+        const switcher = document.getElementById('langSwitcher');
+      
+        menuToggle.addEventListener("click", (event) => {
+            navLinks.classList.toggle("active");
+            event.stopPropagation();
+        });
+
+        const closeAllMenus = () => {
+            if (navLinks.classList.contains("active")) {
+                navLinks.classList.remove("active");
+            }
+            if (switcher && switcher.classList.contains('open')) {
+                switcher.classList.remove('open');
+            }
+        };
+
+        document.addEventListener("click", (event) => {
+            if (navLinks.classList.contains("active") && !navLinks.contains(event.target) && !menuToggle.contains(event.target)) {
+                navLinks.classList.remove("active");
+            }
+        });
+
+        window.addEventListener("scroll", closeAllMenus, true);
+  </script>
+
+  <script>
+        function toggleLangMenu(event) {
+            event.stopPropagation();
+            const switcher = document.getElementById('langSwitcher');
+            switcher.classList.toggle('open');
+        }
+  </script>
+
+  {% block script %}{% endblock %}
+</body>
+
+</html>

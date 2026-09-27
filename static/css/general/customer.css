@@ -1,0 +1,144 @@
+main {
+    padding: 20px;
+}
+
+.FAQ>h2,
+.FAQ>p {
+    text-align: center;
+}
+
+.faq-item,
+.faq-item-parent {
+    max-width: 650px;
+    margin: 20px auto;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #ffffff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+    transition: all 0.3s ease;
+    font-family: Tahoma, sans-serif;
+    direction: rtl;
+}
+
+.faq-item-parent {
+    max-width: 650px;
+    margin: 20px auto;
+    border-radius: 18px;
+    overflow: hidden;
+
+    /* Glassmorphism */
+    background: rgba(255, 255, 255, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.7);
+
+    backdrop-filter: blur(18px) saturate(150%);
+    -webkit-backdrop-filter: blur(18px) saturate(150%);
+
+    box-shadow:
+        0 8px 32px rgba(31, 38, 135, 0.12),
+        inset 0 1px 0 rgba(255, 255, 255, 0.8);
+
+    transition: all 0.35s ease;
+    font-family: Tahoma, sans-serif;
+    direction: rtl;
+}
+
+.faq-item-parent:hover {
+    transform: translateY(-3px);
+
+    background: rgba(255, 255, 255, 0.68);
+
+    border-color: rgba(255, 255, 255, 0.9);
+
+    box-shadow:
+        0 14px 40px rgba(31, 38, 135, 0.16),
+        inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+.faq-question {
+    padding: 16px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    font-weight: bold;
+    color: #1e3a8a;
+    /* رنگ سوال در تم روشن */
+    user-select: none;
+}
+
+.faq-icon {
+    width: 10px;
+    height: 10px;
+    border-right: 2px solid #1e3a8a;
+    border-bottom: 2px solid #1e3a8a;
+    transform: rotate(45deg);
+    transition: transform 0.3s ease;
+}
+
+.faq-answer {
+    padding: 0 20px;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-out;
+}
+
+.fat {
+    white-space: pre-line;
+}
+
+.faq-answer-content {
+    padding: 0 20px 16px 20px;
+    color: #4b5563;
+    /* رنگ متن جواب در تم روشن */
+    line-height: 1.7;
+    font-size: 14px;
+    border-top: 1px dashed #e5e7eb;
+    padding-top: 15px;
+}
+
+.faq-item.active .faq-icon {
+    transform: rotate(-135deg);
+}
+
+
+/* --- استایل‌های تم دارک (زمانی که body کلاس dark دارد) --- */
+body.dark .faq-item,
+body.dark .faq-item-parent {
+    background: #1f2937;
+    border-color: #374151;
+}
+
+body.dark .faq-item-parent {
+    background: rgba(17, 24, 39, 0.55);
+    border-color: rgba(255, 255, 255, 0.12);
+
+    backdrop-filter: blur(18px) saturate(140%);
+    -webkit-backdrop-filter: blur(18px) saturate(140%);
+
+    box-shadow:
+        0 10px 35px rgba(0, 0, 0, 0.25),
+        inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+body.dark .faq-item-parent:hover {
+    background: rgba(31, 41, 55, 0.65);
+    border-color: rgba(255, 255, 255, 0.18);
+
+    box-shadow:
+        0 15px 45px rgba(0, 0, 0, 0.35),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+body.dark .faq-question {
+    color: #e9f3ff;
+}
+
+body.dark .faq-icon {
+    border-color: #e9f3ff;
+}
+
+body.dark .faq-answer-content {
+    color: #d1d5db;
+    border-top-color: #374151;
+}

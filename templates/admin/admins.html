@@ -1,0 +1,412 @@
+{% extends "admin/base.html" %}
+
+{% block header %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin/admins.css') }}">
+{% endblock %}
+
+{% block title %}مدیریت مدیران سیستم{% endblock %}
+
+{% block body %}
+<main class="admins-main">
+
+  <!-- Header Section -->
+  <div class="admins-header">
+    <div class="header-title">
+      <h2 class="page-title">مدیریت مدیران و دسترسی‌ها</h2>
+      <p class="page-subtitle">لیست مدیران سیستم، تعریف نقش‌ها و مدیریت سطح دسترسی‌ها</p>
+    </div>
+    <button class="btn btn-primary add-admin-btn" id="openAddModalBtn"
+      onclick="ActiveGP(); ActiveTP(document.querySelector('.add-admin-modal'))">
+      ➕ افزودن مدیر جدید
+    </button>
+  </div>
+
+  <!-- Summary Cards -->
+  <div class="admin-stats-grid">
+    <div class="stat-card total-admins">
+      <div class="stat-info">
+        <span class="card-title">کل مدیران</span>
+        <span class="card-value" id="totalAdminsCount">0</span>
+      </div>
+    </div>
+    <div class="stat-card active-admins">
+      <div class="stat-info">
+        <span class="card-title">مدیران فعال</span>
+        <span class="card-value" id="activeAdminsCount">0</span>
+      </div>
+    </div>
+    <div class="stat-card super-admins">
+      <div class="stat-info">
+        <span class="card-title">مدیران ارشد</span>
+        <span class="card-value" id="superAdminsCount">0</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Table Section -->
+  <div class="table-card">
+    <div class="table-card-header">
+      <h3>لیست حساب‌های کاربری مدیران</h3>
+      <div class="table-controls">
+        <div class="search-box">
+          <input type="text" id="adminSearchInput" class="form-control" placeholder="جستجو نام‌کاربری...">
+        </div>
+        <div class="filter-group">
+          <select id="roleFilterSelect" class="form-select filter-select">
+            <option value="all" selected>همه نقش‌ها</option>
+            <option value="superadmin">مدیر ارشد</option>
+            <option value="admin">مدیر عادی</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="table-responsive">
+      <table class="table custom-table" id="adminsTable">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>کاربر</th>
+            <th>نقش دسترسی</th>
+            <th>آخرین ورود</th>
+            <th>عملیات</th>
+          </tr>
+        </thead>
+        <tbody id="adminsTableBody">
+          <!-- پر شدن داینامیک -->
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</main>
+
+<script>
+let globalAdminsData = [];
+let permissionsConfig = {};
+let isCurrentSuper = false;
+
+document.addEventListener("DOMContentLoaded", () => {
+    fetchAdmins();
+
+    function fetchAdmins() {
+        fetch("/atra-site/admin/api/admins")
+            .then(res => res.json())
+            .then(res => {
+                if (res.status === "success") {
+                    globalAdminsData = res.data;
+                    permissionsConfig = res.permissions_config;
+                    isCurrentSuper = res.current_user_is_super;
+
+                    document.getElementById("totalAdminsCount").innerText = res.stats.total;
+                    document.getElementById("activeAdminsCount").innerText = res.stats.active;
+                    document.getElementById("superAdminsCount").innerText = res.stats.super_admins;
+
+                    renderAddPermissionsForm();
+
+                    const tbody = document.getElementById("adminsTableBody");
+                    tbody.innerHTML = "";
+
+                    if (res.data.length === 0) {
+                        tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;">هیچ مدیری یافت نشد.</td></tr>`;
+                        return;
+                    }
+
+                    res.data.forEach((admin, index) => {
+                        const isSuper = admin.role === 'superadmin';
+                        const roleBadge = isSuper 
+                            ? '<span class="badge role-badge role-super">مدیر ارشد</span>' 
+                            : '<span class="badge role-badge role-admin">مدیر</span>';
+
+                        const firstChar = admin.username ? admin.username[0].toUpperCase() : 'A';
+
+                        // غیرفعال کردن دکمه‌ها طبق دسترسی
+                        let canEdit = true;
+                        let canDelete = true;
+
+                        if (!isCurrentSuper && !admin.is_current_user) {
+                            canEdit = false;
+                            canDelete = false;
+                        }
+                        if (isCurrentSuper && isSuper && !admin.is_current_user) {
+                            canEdit = false;
+                            canDelete = false;
+                        }
+                        if (admin.is_current_user) {
+                            canDelete = false; // عدم حذف خودش
+                        }
+
+                        const row = `
+    <tr data-role="${admin.role}">
+        <td>${index + 1}</td>
+        <td class="user-cell">
+            <div class="user-avatar">${firstChar}</div>
+            <div class="user-info-text">
+                <span class="user-username">${admin.username} ${admin.is_current_user ? '<small>(شما)</small>' : ''}</span>
+            </div>
+        </td>
+        <td>${roleBadge}</td>
+        <td class="last-login">${admin.last_login}</td>
+        <td class="actions-cell">
+            ${canEdit ? `<button class="btn-action edit-btn" title="ویرایش" onclick="openEditModal(${admin.id})">✏️</button>` : ''}
+            ${canDelete ? `<button class="btn-action delete-btn" title="حذف" onclick="deleteAdmin(${admin.id})">🗑️</button>` : ''}
+        </td>
+    </tr>
+`;
+
+                        tbody.insertAdjacentHTML("beforeend", row);
+                    });
+                }
+            })
+            .catch(err => console.error("Error fetching admins:", err));
+    }
+
+    // رندر بخش چک‌باکس‌های دسترسی ساخت مدیر
+    function renderAddPermissionsForm() {
+        const container = document.getElementById("addPermissionsContainer");
+        if (!container) return;
+        container.innerHTML = "";
+
+        Object.keys(permissionsConfig).forEach(key => {
+            const label = permissionsConfig[key];
+            const html = `
+                <label class="perm-item">
+                    <input type="checkbox" name="add_perm" value="${key}">
+                    <span>${label}</span>
+                </label>
+            `;
+            container.insertAdjacentHTML("beforeend", html);
+        });
+    }
+
+    // فیلتر و جستجو
+    const searchInput = document.getElementById("adminSearchInput");
+    const roleFilter = document.getElementById("roleFilterSelect");
+
+    function filterTable() {
+        const query = searchInput.value.toLowerCase().trim();
+        const selectedRole = roleFilter.value;
+        const rows = document.querySelectorAll("#adminsTableBody tr");
+
+        rows.forEach(row => {
+            const text = row.innerText.toLowerCase();
+            const role = row.getAttribute("data-role") || "";
+            const matchesSearch = text.includes(query);
+            const matchesRole = (selectedRole === "all") || (role === selectedRole);
+            row.style.display = (matchesSearch && matchesRole) ? "" : "none";
+        });
+    }
+
+    if (searchInput) searchInput.addEventListener("input", filterTable);
+    if (roleFilter) roleFilter.addEventListener("change", filterTable); // ✅ درست
+
+    // ثبت مدیر جدید
+    const addAdminForm = document.getElementById("addAdminForm");
+    if (addAdminForm) {
+        addAdminForm.addEventListener("submit", function (e) {
+            e.preventDefault();
+
+            const username = document.getElementById("addAdminUsername").value;
+            const password = document.getElementById("addAdminPassword").value;
+            const confirmPassword = document.getElementById("addAdminPasswordConfirm").value;
+
+            if (password !== confirmPassword) {
+                alert("کلمه عبور و تکرار آن یکسان نیستند.");
+                return;
+            }
+
+            const permissions = {};
+            document.querySelectorAll('input[name="add_perm"]').forEach(cb => {
+                permissions[cb.value] = cb.checked;
+            });
+
+            fetch("/atra-site/admin/api/add-admin", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ username, password, permissions })
+            })
+            .then(res => res.json())
+            .then(data => {
+                alert(data.message);
+                if (data.type === "success") {
+                    DeactivateTP(document.querySelector('.add-admin-modal'));
+                    DeactivateGP();
+                    addAdminForm.reset();
+                    fetchAdmins();
+                }
+            });
+        });
+    }
+
+    // ثبت ویرایش مدیر
+    const editAdminForm = document.getElementById("editAdminForm");
+    if (editAdminForm) {
+        editAdminForm.addEventListener("submit", function (e) {
+            e.preventDefault();
+
+            const adminId = document.getElementById("editAdminId").value;
+            const username = document.getElementById("editAdminUsername").value;
+            const password = document.getElementById("editAdminPassword").value;
+
+            const permissions = {};
+            document.querySelectorAll('input[name="edit_perm"]').forEach(cb => {
+                permissions[cb.value] = cb.checked;
+            });
+
+            fetch(`/atra-site/admin/api/edit-admin/${adminId}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ username, password, permissions })
+            })
+            .then(res => res.json())
+            .then(data => {
+                alert(data.message);
+                if (data.type === "success") {
+                    DeactivateTP(document.querySelector('.edit-admin-modal'));
+                    DeactivateGP();
+                    editAdminForm.reset();
+                    fetchAdmins();
+                }
+            });
+        });
+    }
+});
+
+// سوئیچ دیدن/مخفی‌سازی رمز
+function togglePasswordView(adminId) {
+    const field = document.getElementById(`pw-field-${adminId}`);
+    if (field.type === "password") {
+        field.type = "text";
+    } else {
+        field.type = "password";
+    }
+}
+
+// باز کردن مودال ویرایش
+function openEditModal(adminId) {
+    const admin = globalAdminsData.find(a => a.id === adminId);
+    if (!admin) return;
+
+    document.getElementById("editAdminId").value = admin.id;
+    document.getElementById("editAdminUsername").value = admin.username;
+    document.getElementById("editAdminPassword").value = "";
+
+    const permContainer = document.getElementById("editPermissionsContainer");
+    const permSection = document.getElementById("editPermissionsSection");
+    permContainer.innerHTML = "";
+
+    // اگر کاربر در حال ویرایش خود باشد، تغییر سطوح دسترسی نشان داده نمی‌شود
+    if (admin.is_current_user || !isCurrentSuper) {
+        permSection.style.display = "none";
+    } else {
+        permSection.style.display = "block";
+        Object.keys(permissionsConfig).forEach(key => {
+            const label = permissionsConfig[key];
+            const isChecked = admin.access && admin.access[key] ? "checked" : "";
+            const html = `
+                <label class="perm-item">
+                    <input type="checkbox" name="edit_perm" value="${key}" ${isChecked}>
+                    <span>${label}</span>
+                </label>
+            `;
+            permContainer.insertAdjacentHTML("beforeend", html);
+        });
+    }
+
+    ActiveGP();
+    ActiveTP(document.querySelector('.edit-admin-modal'));
+}
+
+// حذف مدیر
+function deleteAdmin(adminId) {
+    if (confirm("آیا از حذف این کاربر اطمینان دارید؟")) {
+        fetch(`/atra-site/admin/api/delete-admin/${adminId}`, {
+            method: "DELETE"
+        })
+        .then(res => res.json())
+        .then(data => {
+            alert(data.message);
+            if (data.type === "success") {
+                fetchAdmins();
+            }
+        });
+    }
+}
+</script>
+{% endblock %}
+
+{% block top_page %}
+<!-- مودال ساخت مدیر جدید -->
+<div class="add-admin-modal modern-modal">
+  <div class="modal-header">
+    <h3 class="modal-title">افزودن مدیر جدید به سیستم</h3>
+    <button class="close-btn"
+      onclick="DeactivateTP(document.querySelector('.add-admin-modal')); DeactivateGP()">×</button>
+  </div>
+
+  <form id="addAdminForm" class="add-admin-form">
+    <div class="form-grid">
+      <div class="form-group">
+        <label for="addAdminUsername">نام کاربری (لاتین):</label>
+        <input type="text" id="addAdminUsername" class="form-control" required placeholder="مثال: ali_m">
+      </div>
+
+      <div class="form-group">
+        <label for="addAdminPassword">کلمه عبور:</label>
+        <input type="password" id="addAdminPassword" class="form-control" required placeholder="******">
+      </div>
+
+      <div class="form-group">
+        <label for="addAdminPasswordConfirm">تکرار کلمه عبور:</label>
+        <input type="password" id="addAdminPasswordConfirm" class="form-control" required placeholder="******">
+      </div>
+
+      <div class="form-group full-width">
+        <label>تعیین سطوح دسترسی:</label>
+        <div class="permissions-grid" id="addPermissionsContainer"></div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button type="button" class="btn btn-secondary"
+        onclick="DeactivateTP(document.querySelector('.add-admin-modal')); DeactivateGP()">انصراف</button>
+      <button type="submit" class="btn btn-success">ثبت و ایجاد حساب</button>
+    </div>
+  </form>
+</div>
+
+<!-- مودال ویرایش مدیر -->
+<div class="edit-admin-modal modern-modal">
+  <div class="modal-header">
+    <h3 class="modal-title">ویرایش حساب مدیر</h3>
+    <button class="close-btn"
+      onclick="DeactivateTP(document.querySelector('.edit-admin-modal')); DeactivateGP()">×</button>
+  </div>
+
+  <form id="editAdminForm" class="edit-admin-form">
+    <input type="hidden" id="editAdminId">
+    <div class="form-grid">
+      <div class="form-group">
+        <label for="editAdminUsername">نام کاربری:</label>
+        <input type="text" id="editAdminUsername" class="form-control" required>
+      </div>
+
+      <div class="form-group">
+        <label for="editAdminPassword">کلمه عبور جدید (در صورت عدم تغییر خالی بگذارید):</label>
+        <input type="password" id="editAdminPassword" class="form-control" placeholder="******">
+      </div>
+
+      <div class="form-group full-width" id="editPermissionsSection">
+        <label>سطوح دسترسی:</label>
+        <div class="permissions-grid" id="editPermissionsContainer"></div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button type="button" class="btn btn-secondary"
+        onclick="DeactivateTP(document.querySelector('.edit-admin-modal')); DeactivateGP()">انصراف</button>
+      <button type="submit" class="btn btn-primary">ذخیره تغییرات</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

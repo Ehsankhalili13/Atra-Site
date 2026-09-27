@@ -1,0 +1,14 @@
+<div class="product-card">
+
+    <img src="{{ url_for('static', filename='img/p_img/' + product.image_location) }}" alt="product"/>
+    <div class="content">
+
+        <a href="/ar/product/{{ product.id }}" class="title">{{ product.product_name_ar }}</a>
+        <hr>
+        <div class="description">
+            {{ product.product_description_ar }}
+        </div>
+    
+    </div>
+
+</div>

@@ -1,0 +1,366 @@
+/* Webfont: Yekan */
+@font-face {
+    font-family: 'Yekan';
+    src: url('/static/fonts/Yekan/Yekan.eot');
+    /* IE9 Compat Modes */
+    src: url('/static/fonts/Yekan/Yekan.eot?#iefix') format('embedded-opentype'),
+        /* IE6-IE8 */
+        url('/static/fonts/Yekan/Yekan.woff2') format('woff2'),
+        /* Modern Browsers */
+        url('/static/fonts/Yekan/Yekan.woff') format('woff'),
+        /* Modern Browsers */
+        url('/static/fonts/Yekan/Yekan.otf') format('opentype'),
+        /* Open Type Font */
+        url('/static/fonts/Yekan/Yekan.ttf') format('truetype');
+    /* Safari, Android, iOS */
+    font-weight: normal;
+    font-style: normal;
+    text-rendering: optimizeLegibility;
+    font-display: auto;
+}
+
+@font-face {
+    font-family: 'Vazirmatn';
+    src: url('/static/fonts/Vazirmatn.woff2') format('woff2'),
+      url('/static/fonts/Vazirmatn.ttf') format('truetype');
+    font-weight: 100 900;
+    font-style: normal;
+    font-display: swap;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "Yekan";
+    transition: all 500ms;
+}
+
+/* change site theme BTN */
+.change__site__theme {
+    width: 40px;
+    height: 40px;
+    border: none;
+    outline: none;
+    background-color: transparent;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: all 500ms;
+}
+
+.change__site__theme img {
+    width: 25px;
+    height: 25px;
+}
+
+
+html {
+    scroll-behavior: smooth;
+}
+
+:root {
+    --site-main-color: #0088ff;
+    --site-main2-color: #004fb7;
+    --site-main-shadow: 0px 0px 10px 2px rgba(0, 88, 239, 0.5);
+    --bs-body-color: #212529;
+    --body-bg-color: #fff;
+    
+    --box-bg: #ffffff;
+    --border-color: #e5e7eb;
+
+}
+
+body.dark {
+    --bs-body-color: #dee2e6;
+    --body-bg-color: #212529;
+    
+    --box-bg: #2b3035;
+    --border-color: #374151;
+}
+
+body.dark {
+    color-scheme: Dark;
+    background-color: var(--body-bg-color);
+}
+
+body.dark h1,
+body.dark h2,
+body.dark h3,
+body.dark h4,
+body.dark h5,
+body.dark h6,
+body.dark p,
+body.dark div,
+body.dark span,
+body.dark a,
+body.dark table,
+body.dark th body.dark td {
+    color: #dee2e6;
+}
+
+body {
+    min-height: 100vh;
+    transition: all 500ms;
+    display: flex;
+    flex-direction: column;
+}
+
+/* alert style */
+.alert {
+    position: fixed !important;
+    top: 10px;
+    right: 10px;
+    z-index: 1000000;
+    width: fit-content;
+    opacity: 0;
+}
+
+.show {
+    opacity: 1;
+}
+
+/* sidebar style */
+.sidebar {
+    background-color: #2c3e50;
+    color: #fff;
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 250px;
+    height: 100%;
+    padding: 20px;
+    transition: transform 0.3s ease;
+    z-index: 1000;
+}
+
+.link svg {
+    display: none;
+}
+
+.sidebar:hover {
+    transform: translateX(0);
+}
+
+.sidebar:hover .link svg {
+    transform: rotate(180deg);
+    top: 145%;
+    left: -34px;
+}
+
+.sidebar h2 {
+    color: #fff;
+    font-size: 24px;
+    margin-bottom: 30px;
+    text-align: center;
+}
+
+.link {
+    position: relative;
+}
+
+.sidebar .link ul {
+    list-style: none;
+}
+
+.sidebar .link ul li {
+    margin: 15px 0;
+}
+
+.sidebar .link ul li.active {
+    border-right: 4px solid green;
+    border-radius: 5px 0 0 5px;
+    background-color: #34495e;
+}
+
+.sidebar .link ul li a {
+    color: #fff;
+    position: relative;
+    text-decoration: none;
+    font-size: 18px;
+    display: block;
+    padding: 10px;
+    border-radius: 5px;
+    transition: all 0.3s;
+}
+
+.sidebar .link ul li a::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    display: none;
+    width: 100%;
+    height: 2px;
+    background-color: black;
+}
+
+.sidebar .link ul li a:hover,
+ul li a:focus {
+    background-color: #34495e;
+}
+
+/* Main Style */
+main {
+    margin-right: 250px;
+    padding: 15px;
+}
+
+/* Top Page */
+
+.g_page {
+    background-color: rgba(83, 83, 83, 0.662);
+    position: fixed;
+    top: 0;
+    right: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 100000;
+    display: none;
+    opacity: 0;
+    transition: all 400ms;
+}
+
+.da {
+    display: block !important;
+}
+
+.oa {
+    opacity: 1 !important;
+}
+
+.top_page {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000000;
+    display: none;
+}
+
+.tpa {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.top_page>* {
+    display: none;
+    opacity: 0;
+    transition: opacity 400ms !important;
+}
+
+/* ==========================================================
+   Responsive Base System
+   ========================================================== */
+
+/* متغیرهای اندازه */
+:root {
+    --sidebar-width: 250px;
+    --header-height: 60px;
+}
+
+/* ساختار کلی Main */
+main {
+    margin-right: var(--sidebar-width);
+    padding: 20px;
+    transition: margin-right 0.3s ease, padding 0.3s ease;
+    min-height: 100vh;
+}
+
+/* دکمه همبرگری موبایل (در حالت عادی مخفی) */
+.mobile-nav-toggle {
+    display: none;
+    position: fixed;
+    top: 12px;
+    right: 12px;
+    z-index: 1001;
+    background: var(--site-main-color, #0088ff);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 1.2rem;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+/* لایه تاریک پشت سیدبار در موبایل */
+.sidebar-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(2px);
+    z-index: 999;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.sidebar-overlay.active {
+    display: block;
+    opacity: 1;
+}
+
+/* Backdrop Overlay Improvement for Top Page Modals */
+.g_page {
+    backdrop-filter: blur(4px);
+    background-color: rgba(0, 0, 0, 0.45) !important;
+}
+
+.top_page {
+    display: flex !important;
+    justify-content: center;
+    align-items: center;
+    pointer-events: none;
+}
+
+.top_page > * {
+    pointer-events: auto;
+}
+
+
+/* ==========================================================
+   Media Queries (Responsive Breakpoints)
+   ========================================================== */
+
+/* تبلت و موبایل (کمتر از 992px) */
+@media (max-width: 990px) {
+    .mobile-nav-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .sidebar {
+        transform: translateX(100%); /* مخفی کردن سیدبار در راست */
+        box-shadow: -5px 0 15px rgba(0,0,0,0.1);
+    }
+
+    .sidebar.open {
+        transform: translateX(0); /* باز شدن سیدبار */
+    }
+
+    main {
+        margin-right: 0 !important; /* پر کردن کامل صفحه */
+        padding: 70px 15px 20px 15px; /* فاصله از بالا برای دکمه منو */
+    }
+
+    .top_page .history-container {
+        width: 95% !important;
+        padding: 15px !important;
+    }
+}
+
+/* موبایل‌های کوچک (کمتر از 576px) */
+@media (max-width: 575.98px) {
+    main {
+        padding: 65px 10px 15px 10px;
+    }
+
+    .page-title {
+        font-size: 1.2rem !important;
+    }
+}
