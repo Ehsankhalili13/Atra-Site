@@ -25,5 +25,53 @@
 {% block script %}
     <script>
         ActiveNavLinkPage("#productsPage");
+
+        function addToCartFromList(btn) {
+            const id = parseInt(btn.dataset.id, 10);
+            const fb = document.getElementById("fb-" + id);
+            if (!id || btn.disabled) return;
+
+            btn.disabled = true;
+            if (fb) {
+                fb.style.display = "none";
+                fb.className = "card-cart-feedback";
+                fb.innerHTML = "";
+            }
+
+            fetch("/account/api/cart/add", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ product_id: id, quantity: 1 })
+            })
+            .then(r => r.json().then(d => ({ status: r.status, d })))
+            .then(({ status, d }) => {
+                if (status === 401) {
+                    window.location.href = "/account/login";
+                    return;
+                }
+                if (fb) {
+                    fb.style.display = "block";
+                    if (d.status === "success") {
+                        fb.className = "card-cart-feedback";
+                        fb.innerHTML = (d.message || "اضافه شد") + ' — <a href="/account/cart">سبد خرید</a>';
+                    } else {
+                        fb.className = "card-cart-feedback err";
+                        fb.innerText = d.message || "خطا";
+                    }
+                }
+                // اگر ناموجود نبود دوباره فعال شود
+                if (d.status === "success" || (d.message && !d.message.includes("موجودی"))) {
+                    btn.disabled = false;
+                }
+            })
+            .catch(() => {
+                if (fb) {
+                    fb.style.display = "block";
+                    fb.className = "card-cart-feedback err";
+                    fb.innerText = "خطای ارتباط با سرور";
+                }
+                btn.disabled = false;
+            });
+        }
     </script>
 {% endblock %}
