@@ -20,12 +20,24 @@
     background: rgba(245,158,11,0.12); color: #d97706;
     padding: 12px; border-radius: 10px; font-size: 0.88rem; margin: 16px 0; text-align: right;
   }
+  .note.ok {
+    background: rgba(16,185,129,0.12); color: #059669;
+  }
   .links { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 18px; }
-  .links a {
+  .links a, .links button {
     padding: 10px 16px; border-radius: 8px; text-decoration: none; font-size: 0.9rem;
     border: 1px solid var(--border-color); color: var(--bs-body-color);
+    background: transparent; cursor: pointer;
   }
-  .links a.primary { background: var(--site-main-color); color: #fff; border-color: transparent; }
+  .links a.primary, .links button.primary {
+    background: var(--site-main-color); color: #fff; border-color: transparent;
+  }
+  .links button.sim {
+    background: #d97706; color: #fff; border-color: transparent;
+  }
+  #simMsg { margin-top: 12px; font-size: 0.9rem; display: none; }
+  #simMsg.err { display: block; color: #dc2626; }
+  #simMsg.ok { display: block; color: #059669; }
 </style>
 {% endblock %}
 
@@ -33,20 +45,67 @@
 <main>
   <div class="pay-wrap">
     <div class="pay-card">
-      <h1>سفارش ثبت شد</h1>
+      <h1>پرداخت سفارش</h1>
       <p>کد سفارش: <span class="code">{{ order.order_code }}</span></p>
       <p>وضعیت: {{ order.status_label }}</p>
       <div class="amount">{{ "{:,}".format(order.total_amount) }} تومان</div>
 
+      {% if order.payment_status == 'paid' %}
+      <div class="note ok">این سفارش پرداخت شده است.</div>
+      {% elif payment_simulate %}
       <div class="note">
-        درگاه زرین‌پال به‌زودی متصل می‌شود. فعلاً سفارش شما با وضعیت «در انتظار پرداخت» ثبت شده و موجودی رزرو شده است.
+        حالت آزمایشی فعال است. درگاه واقعی هنوز وصل نیست؛ می‌توانید پرداخت را شبیه‌سازی کنید تا موجودی کسر و سفارش paid شود.
       </div>
+      {% else %}
+      <div class="note">
+        درگاه زرین‌پال هنوز فعال نشده. سفارش شما در وضعیت «در انتظار پرداخت» ثبت شده است.
+      </div>
+      {% endif %}
+
+      <div id="simMsg"></div>
 
       <div class="links">
+        {% if payment_simulate and order.payment_status != 'paid' %}
+        <button type="button" class="sim" id="simPayBtn" onclick="simulatePay({{ order.id }})">تأیید آزمایشی پرداخت</button>
+        {% endif %}
         <a href="/account/profile" class="primary">پروفایل و سفارش‌ها</a>
         <a href="/products">بازگشت به فروشگاه</a>
       </div>
     </div>
   </div>
 </main>
+{% endblock %}
+
+{% block script %}
+<script>
+function simulatePay(orderId) {
+  const btn = document.getElementById("simPayBtn");
+  const msg = document.getElementById("simMsg");
+  if (btn) btn.disabled = true;
+  msg.className = "";
+  msg.style.display = "none";
+
+  fetch("/account/api/order/" + orderId + "/simulate-pay", { method: "POST" })
+    .then(r => r.json())
+    .then(d => {
+      if (d.status === "success") {
+        msg.className = "ok";
+        msg.style.display = "block";
+        msg.innerText = d.message;
+        setTimeout(() => { window.location.href = d.redirect || "/account/profile"; }, 800);
+      } else {
+        msg.className = "err";
+        msg.style.display = "block";
+        msg.innerText = d.message || "خطا";
+        if (btn) btn.disabled = false;
+      }
+    })
+    .catch(() => {
+      msg.className = "err";
+      msg.style.display = "block";
+      msg.innerText = "خطای ارتباط با سرور";
+      if (btn) btn.disabled = false;
+    });
+}
+</script>
 {% endblock %}
