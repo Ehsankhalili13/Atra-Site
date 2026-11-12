@@ -12,12 +12,12 @@ from flask import (
 )
 
 from models import (
-    db, Customer, Cart, CartItem, Address, Order, OrderItem, Products
+    db, Customer, Cart, CartItem, Address, Order, OrderItem, Products,
+    get_setting_bool, get_setting,
 )
 
 app = Blueprint("customer", __name__, url_prefix="/account")
 
-# هزینه ارسال ثابت موقت (تومان) — بعداً قابل تنظیم از پنل
 DEFAULT_SHIPPING_COST = 50000
 
 
@@ -42,7 +42,6 @@ def customer_login_required(f):
 
 
 def _json_login_required(f):
-    """برای APIها: به‌جای redirect، 401 برمی‌گرداند"""
     @wraps(f)
     def decorated(*args, **kwargs):
         customer = get_current_customer()
@@ -79,8 +78,6 @@ def _generate_order_code():
         code = f"ATR-{year}-{suffix}"
     return code
 
-
-# ---------- احراز هویت ----------
 
 @app.route("/register", methods=["GET"])
 def register_page():
@@ -208,8 +205,6 @@ def api_update_profile():
         db.session.rollback()
         return jsonify({"status": "error", "message": str(e)}), 500
 
-
-# ---------- سبد خرید ----------
 
 @app.route("/cart")
 @customer_login_required
@@ -364,8 +359,6 @@ def api_cart_remove():
         return jsonify({"status": "error", "message": str(e)}), 500
 
 
-# ---------- ثبت سفارش ----------
-
 @app.route("/checkout")
 @customer_login_required
 def checkout_page():
@@ -386,7 +379,6 @@ def checkout_page():
 @app.route("/api/checkout", methods=["POST"])
 @_json_login_required
 def api_checkout():
-    """ثبت سفارش و رزرو موجودی — پرداخت در مرحله بعد (زرین‌پال)"""
     try:
         customer = get_current_customer()
         cart = _get_or_create_cart(customer)
@@ -406,7 +398,6 @@ def api_checkout():
         if not all([receiver_name, receiver_phone, province, city, address_line]):
             return jsonify({"status": "error", "message": "لطفاً تمام فیلدهای آدرس را پر کنید."}), 400
 
-        # بررسی موجودی و محاسبه
         items_total = 0
         line_items = []
         for it in cart.items:
@@ -461,10 +452,8 @@ def api_checkout():
                 unit_price=li["unit_price"],
                 total_price=li["total_price"],
             ))
-            # رزرو موجودی
             li["product"].reserved_quantity = (li["product"].reserved_quantity or 0) + li["quantity"]
 
-        # خالی کردن سبد
         for it in list(cart.items):
             db.session.delete(it)
 
@@ -476,7 +465,6 @@ def api_checkout():
             "order_code": order.order_code,
             "order_id": order.id,
             "total_amount": total_amount,
-            # در مرحله بعد به درگاه هدایت می‌شود
             "redirect": f"/account/order/{order.id}/pay",
         }), 201
     except Exception as e:
@@ -487,11 +475,59 @@ def api_checkout():
 @app.route("/order/<int:order_id>/pay")
 @customer_login_required
 def order_pay_placeholder(order_id):
-    """صفحه موقت قبل از اتصال زرین‌پال"""
     customer = get_current_customer()
     order = Order.query.filter_by(id=order_id, customer_id=customer.id).first_or_404()
+    simulate = get_setting_bool("payment_simulate", True)
+    sandbox = get_setting_bool("zarinpal_sandbox", True)
     return render_template(
         "general/persian/account/pay.html",
         customer=customer,
         order=order,
+        payment_simulate=simulate,
+        zarinpal_sandbox=sandbox,
     )
+
+
+@app.route("/api/order/<int:order_id>/simulate-pay", methods=["POST"])
+@_json_login_required
+def api_simulate_pay(order_id):
+    """تأیید آزمایشی پرداخت — فقط وقتی payment_simulate روشن باشد"""
+    try:
+        if not get_setting_bool("payment_simulate", False):
+            return jsonify({"status": "error", "message": "شبیه‌سازی پرداخت غیرفعال است."}), 403
+
+        customer = get_current_customer()
+        order = Order.query.filter_by(id=order_id, customer_id=customer.id).first()
+        if not order:
+            return jsonify({"status": "error", "message": "سفارش یافت نشد."}), 404
+
+        if order.payment_status == "paid":
+            return jsonify({"status": "success", "message": "این سفارش قبلاً پرداخت شده."}), 200
+
+        if order.status == "cancelled":
+            return jsonify({"status": "error", "message": "سفارش لغو شده است."}), 400
+
+        for it in order.items:
+            if not it.product_id:
+                continue
+            product = Products.query.with_for_update().get(it.product_id)
+            if not product:
+                continue
+            reserved = product.reserved_quantity or 0
+            product.reserved_quantity = max(0, reserved - it.quantity)
+            product.stock_quantity = max(0, (product.stock_quantity or 0) - it.quantity)
+
+        order.payment_status = "paid"
+        order.status = "paid"
+        order.paid_at = datetime.utcnow()
+        order.zarinpal_ref_id = order.zarinpal_ref_id or f"TEST-{order.order_code}"
+        db.session.commit()
+
+        return jsonify({
+            "status": "success",
+            "message": "پرداخت آزمایشی با موفقیت ثبت شد.",
+            "redirect": "/account/profile",
+        }), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"status": "error", "message": str(e)}), 500
