@@ -3,7 +3,7 @@ import json
 import bcrypt
 import jdatetime
 from models import db, Admins, Products, Price, Collaboration
-from blueprint import general, admin
+from blueprint import general, admin, customer
 from flask import Flask, render_template, request, jsonify, session, make_response, Response
 from flask_login import LoginManager, login_user
 
@@ -29,6 +29,7 @@ db.init_app(app)
 
 app.register_blueprint(general.app)
 app.register_blueprint(admin.app)
+app.register_blueprint(customer.app)
 
 with app.app_context():
     db.create_all()
@@ -172,7 +173,7 @@ def ala():
         user = Admins.query.filter_by(username=username).first()
 
         if user and bcrypt.checkpw(password.encode("utf-8"), user.password.encode("utf-8")):
-            login_user(user)  # ثبت نشست کاربر در flask_login
+            login_user(user)
             session["username"] = username
             return jsonify(message="ورود با موفقیت انجام شد.", type="success")
         else:
