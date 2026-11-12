@@ -2,7 +2,10 @@ import json
 import bcrypt
 import jdatetime
 from datetime import datetime
-from models import db, Admins, PageView, Collaboration, Products, Price, Order, Customer
+from models import (
+    db, Admins, PageView, Collaboration, Products, Price, Order, Customer,
+    get_setting, get_setting_bool, set_setting, ensure_default_settings,
+)
 from config import PERMISSIONS
 from ext import permission_required
 from flask import Blueprint, render_template, redirect, session, jsonify, request
@@ -321,6 +324,49 @@ def update_order_admin(order_id):
             o.admin_note = data["admin_note"]
         db.session.commit()
         return jsonify({"status": "success", "message": "سفارش بروزرسانی شد."}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+# --- حالت آزمایشی / تنظیمات ---
+
+@app.route("/settings")
+@login_required
+def settings_page():
+    return render_template("admin/settings.html")
+
+
+@app.route("/api/settings", methods=["GET"])
+@login_required
+def get_settings_api():
+    try:
+        ensure_default_settings()
+        data = {
+            "otp_test_mode": get_setting_bool("otp_test_mode", True),
+            "otp_test_code": get_setting("otp_test_code", "12345"),
+            "zarinpal_sandbox": get_setting_bool("zarinpal_sandbox", True),
+            "zarinpal_merchant_id": get_setting("zarinpal_merchant_id", "") or "",
+            "payment_simulate": get_setting_bool("payment_simulate", True),
+        }
+        return jsonify({"status": "success", "data": data}), 200
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+@app.route("/api/settings", methods=["PUT"])
+@login_required
+def update_settings_api():
+    try:
+        data = request.get_json() or {}
+        set_setting("otp_test_mode", "1" if data.get("otp_test_mode") else "0")
+        code = (data.get("otp_test_code") or "12345").strip()
+        set_setting("otp_test_code", code or "12345")
+        set_setting("zarinpal_sandbox", "1" if data.get("zarinpal_sandbox") else "0")
+        set_setting("zarinpal_merchant_id", (data.get("zarinpal_merchant_id") or "").strip())
+        set_setting("payment_simulate", "1" if data.get("payment_simulate") else "0")
+        db.session.commit()
+        return jsonify({"status": "success", "message": "تنظیمات ذخیره شد."}), 200
     except Exception as e:
         db.session.rollback()
         return jsonify({"status": "error", "message": str(e)}), 500
