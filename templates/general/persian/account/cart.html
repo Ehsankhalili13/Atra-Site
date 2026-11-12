@@ -1,0 +1,135 @@
+{% extends "general/persian/base.html" %}
+
+{% block title %}سبد خرید{% endblock %}
+
+{% block head %}
+<style>
+  .cart-wrap { max-width: 900px; margin: 30px auto; padding: 0 16px; }
+  .cart-wrap h1 { font-size: 1.4rem; color: var(--site-main-color); margin-bottom: 18px; }
+  .cart-card {
+    background: var(--nav-bg, #fff);
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    padding: 18px;
+    margin-bottom: 16px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.03);
+  }
+  .cart-item {
+    display: flex; gap: 14px; align-items: center;
+    padding: 12px 0; border-bottom: 1px solid var(--border-color);
+  }
+  .cart-item:last-child { border-bottom: none; }
+  .cart-item img {
+    width: 72px; height: 72px; object-fit: cover; border-radius: 10px; background: #eee;
+  }
+  .cart-item .info { flex: 1; }
+  .cart-item .name { font-weight: 600; margin-bottom: 4px; }
+  .cart-item .price { font-size: 0.9rem; opacity: 0.85; }
+  .qty-controls { display: flex; align-items: center; gap: 8px; }
+  .qty-controls button {
+    width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--border-color);
+    background: var(--body-bg-color); color: var(--bs-body-color); cursor: pointer;
+  }
+  .qty-controls span { min-width: 24px; text-align: center; }
+  .btn-remove {
+    border: none; background: transparent; color: #dc2626; cursor: pointer; font-size: 0.85rem;
+  }
+  .summary-row {
+    display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.95rem;
+  }
+  .summary-row.total { font-weight: 700; font-size: 1.1rem; margin-top: 10px; }
+  .btn-checkout {
+    display: block; width: 100%; margin-top: 14px; padding: 12px; border: none; border-radius: 10px;
+    background: var(--site-main-color); color: #fff; font-weight: 600; text-align: center;
+    text-decoration: none; cursor: pointer;
+  }
+  .empty { text-align: center; padding: 40px 16px; opacity: 0.75; }
+  .empty a { color: var(--site-main-color); }
+</style>
+{% endblock %}
+
+{% block body %}
+<main>
+  <div class="cart-wrap">
+    <h1>سبد خرید</h1>
+
+    <div class="cart-card" id="cartItems">
+      {% if cart.items %}
+        {% for it in cart.items %}
+        <div class="cart-item" data-id="{{ it.id }}">
+          {% if it.product and it.product.image_location %}
+          <img src="{{ url_for('static', filename='img/p_img/' + it.product.image_location) }}" alt="">
+          {% else %}
+          <img src="" alt="" style="background:#ddd">
+          {% endif %}
+          <div class="info">
+            <div class="name">{{ it.product.product_name_fa if it.product else 'محصول' }}</div>
+            <div class="price">{{ "{:,}".format(it.unit_price) }} تومان</div>
+            <div class="qty-controls" style="margin-top:8px">
+              <button type="button" onclick="changeQty({{ it.id }}, {{ it.quantity - 1 }})">−</button>
+              <span>{{ it.quantity }}</span>
+              <button type="button" onclick="changeQty({{ it.id }}, {{ it.quantity + 1 }})">+</button>
+              <button type="button" class="btn-remove" onclick="removeItem({{ it.id }})">حذف</button>
+            </div>
+          </div>
+          <div style="font-weight:600">{{ "{:,}".format(it.subtotal) }}</div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="empty">سبد خرید خالی است. <a href="/products">مشاهده محصولات</a></div>
+      {% endif %}
+    </div>
+
+    {% if cart.items %}
+    <div class="cart-card">
+      <div class="summary-row">
+        <span>جمع اقلام</span>
+        <span id="itemsTotal">{{ "{:,}".format(cart.total_amount) }} تومان</span>
+      </div>
+      <div class="summary-row">
+        <span>هزینه ارسال (تقریبی)</span>
+        <span>۵۰,۰۰۰ تومان</span>
+      </div>
+      <div class="summary-row total">
+        <span>مبلغ قابل پرداخت</span>
+        <span id="grandTotal">{{ "{:,}".format(cart.total_amount + 50000) }} تومان</span>
+      </div>
+      <a href="/account/checkout" class="btn-checkout">ادامه و ثبت سفارش</a>
+    </div>
+    {% endif %}
+  </div>
+</main>
+{% endblock %}
+
+{% block script %}
+<script>
+function changeQty(itemId, qty) {
+  fetch("/account/api/cart/update", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ item_id: itemId, quantity: qty })
+  })
+  .then(r => r.json())
+  .then(d => {
+    if (d.status === "success") location.reload();
+    else alert(d.message || "خطا");
+  })
+  .catch(() => alert("خطای ارتباط"));
+}
+
+function removeItem(itemId) {
+  if (!confirm("حذف این محصول از سبد؟")) return;
+  fetch("/account/api/cart/remove", {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ item_id: itemId })
+  })
+  .then(r => r.json())
+  .then(d => {
+    if (d.status === "success") location.reload();
+    else alert(d.message || "خطا");
+  })
+  .catch(() => alert("خطای ارتباط"));
+}
+</script>
+{% endblock %}
