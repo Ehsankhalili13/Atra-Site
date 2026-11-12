@@ -1,0 +1,219 @@
+{% extends "admin/base.html" %}
+
+{% block header %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin/dashboard.css') }}">
+<style>
+  .settings-grid { display: grid; gap: 16px; max-width: 720px; }
+  .setting-card {
+    background: var(--box-bg, #fff);
+    border: 1px solid var(--border-color, rgba(0,0,0,0.08));
+    border-radius: 12px;
+    padding: 18px 20px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+    border-right: 4px solid var(--site-main-color, #0088ff);
+  }
+  .setting-card h3 { font-size: 1.05rem; margin: 0 0 6px; }
+  .setting-card .desc { font-size: 0.88rem; opacity: 0.75; margin-bottom: 14px; line-height: 1.6; }
+  .toggle-row {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  }
+  .toggle-label { font-weight: 500; }
+  .switch {
+    position: relative; width: 48px; height: 26px; flex-shrink: 0;
+  }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .slider {
+    position: absolute; cursor: pointer; inset: 0;
+    background: #cbd5e1; border-radius: 26px; transition: 0.2s;
+  }
+  .slider:before {
+    content: ""; position: absolute; height: 20px; width: 20px;
+    right: 3px; bottom: 3px; background: #fff; border-radius: 50%; transition: 0.2s;
+  }
+  input:checked + .slider { background: var(--site-main-color, #0088ff); }
+  input:checked + .slider:before { transform: translateX(-22px); }
+  .field-row { margin-top: 12px; }
+  .field-row label { display: block; font-size: 0.85rem; margin-bottom: 4px; opacity: 0.85; }
+  .field-row input {
+    width: 100%; max-width: 280px; padding: 8px 12px; border-radius: 8px;
+    border: 1px solid var(--border-color, #ccc);
+    background: var(--body-bg-color, #fff); color: var(--bs-body-color, #333);
+  }
+  .badge-test {
+    display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 0.78rem;
+    background: rgba(245,158,11,0.15); color: #d97706; margin-right: 8px;
+  }
+  .badge-live {
+    display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 0.78rem;
+    background: rgba(16,185,129,0.15); color: #059669; margin-right: 8px;
+  }
+  .save-bar { margin-top: 8px; }
+  .msg { display: none; margin-bottom: 12px; padding: 10px 14px; border-radius: 8px; font-size: 0.9rem; }
+  .msg.ok { display: block; background: rgba(16,185,129,0.12); color: #059669; }
+  .msg.err { display: block; background: rgba(239,68,68,0.12); color: #dc2626; }
+  .warn-box {
+    background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.3);
+    border-radius: 10px; padding: 12px 14px; font-size: 0.88rem; margin-bottom: 16px; color: #b45309;
+  }
+</style>
+{% endblock %}
+
+{% block title %}حالت آزمایشی{% endblock %}
+
+{% block body %}
+<main class="dashboard-main">
+  <div class="dashboard-header">
+    <h2 class="page-title">حالت آزمایشی و تنظیمات درگاه</h2>
+  </div>
+
+  <div class="warn-box">
+    این بخش فقط برای توسعه و تست است. قبل از انتشار عمومی سایت،
+    <strong>OTP آزمایشی</strong> و <strong>شبیه‌سازی پرداخت</strong> را خاموش کنید و درگاه واقعی زرین‌پال را فعال کنید.
+  </div>
+
+  <div id="msg" class="msg"></div>
+
+  <div class="settings-grid">
+
+    <div class="setting-card">
+      <h3>OTP آزمایشی</h3>
+      <p class="desc">
+        چون سرویس پیامک ندارید، با روشن بودن این گزینه کد OTP واقعی ارسال نمی‌شود
+        و از <strong>کد ثابت</strong> زیر استفاده می‌شود. وقتی سرویس SMS وصل شد، این گزینه را خاموش کنید.
+      </p>
+      <div class="toggle-row">
+        <span class="toggle-label">
+          <span id="otpBadge" class="badge-test">آزمایشی</span>
+          فعال بودن OTP آزمایشی
+        </span>
+        <label class="switch">
+          <input type="checkbox" id="otp_test_mode">
+          <span class="slider"></span>
+        </label>
+      </div>
+      <div class="field-row">
+        <label>کد OTP آزمایشی</label>
+        <input type="text" id="otp_test_code" placeholder="12345" maxlength="10">
+      </div>
+    </div>
+
+    <div class="setting-card">
+      <h3>زرین‌پال — Sandbox</h3>
+      <p class="desc">
+        در حالت Sandbox تراکنش‌ها واقعی نیستند و برای تست درگاه استفاده می‌شوند.
+        بعد از گرفتن Merchant ID واقعی و تأیید، این گزینه را خاموش کنید.
+      </p>
+      <div class="toggle-row">
+        <span class="toggle-label">
+          <span id="zpBadge" class="badge-test">Sandbox</span>
+          حالت آزمایشی زرین‌پال
+        </span>
+        <label class="switch">
+          <input type="checkbox" id="zarinpal_sandbox">
+          <span class="slider"></span>
+        </label>
+      </div>
+      <div class="field-row">
+        <label>Merchant ID (اختیاری تا زمان دریافت)</label>
+        <input type="text" id="zarinpal_merchant_id" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx">
+      </div>
+    </div>
+
+    <div class="setting-card">
+      <h3>شبیه‌سازی پرداخت (بدون درگاه)</h3>
+      <p class="desc">
+        تا وقتی درگاه نگرفته‌اید، با این گزینه مشتری می‌تواند در صفحه پرداخت دکمه
+        «تأیید آزمایشی پرداخت» را بزند و سفارش paid شود (موجودی قطعی کم می‌شود).
+        برای تست کامل جریان خرید مفید است. روی سرور واقعی خاموشش کنید.
+      </p>
+      <div class="toggle-row">
+        <span class="toggle-label">
+          <span id="simBadge" class="badge-test">شبیه‌سازی</span>
+          اجازه شبیه‌سازی پرداخت موفق
+        </span>
+        <label class="switch">
+          <input type="checkbox" id="payment_simulate">
+          <span class="slider"></span>
+        </label>
+      </div>
+    </div>
+
+    <div class="save-bar">
+      <button type="button" class="btn btn-primary" onclick="saveSettings()">ذخیره تنظیمات</button>
+    </div>
+  </div>
+</main>
+
+<script>
+function updateBadges() {
+  const otpOn = document.getElementById("otp_test_mode").checked;
+  const zpOn = document.getElementById("zarinpal_sandbox").checked;
+  const simOn = document.getElementById("payment_simulate").checked;
+
+  const otpBadge = document.getElementById("otpBadge");
+  otpBadge.className = otpOn ? "badge-test" : "badge-live";
+  otpBadge.innerText = otpOn ? "آزمایشی" : "واقعی";
+
+  const zpBadge = document.getElementById("zpBadge");
+  zpBadge.className = zpOn ? "badge-test" : "badge-live";
+  zpBadge.innerText = zpOn ? "Sandbox" : "Production";
+
+  const simBadge = document.getElementById("simBadge");
+  simBadge.className = simOn ? "badge-test" : "badge-live";
+  simBadge.innerText = simOn ? "شبیه‌سازی" : "خاموش";
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  fetch("/atra-site/admin/api/settings")
+    .then(r => r.json())
+    .then(res => {
+      if (res.status !== "success") return;
+      const s = res.data || {};
+      document.getElementById("otp_test_mode").checked = !!s.otp_test_mode;
+      document.getElementById("otp_test_code").value = s.otp_test_code || "12345";
+      document.getElementById("zarinpal_sandbox").checked = !!s.zarinpal_sandbox;
+      document.getElementById("zarinpal_merchant_id").value = s.zarinpal_merchant_id || "";
+      document.getElementById("payment_simulate").checked = !!s.payment_simulate;
+      updateBadges();
+    });
+
+  ["otp_test_mode", "zarinpal_sandbox", "payment_simulate"].forEach(id => {
+    document.getElementById(id).addEventListener("change", updateBadges);
+  });
+});
+
+function saveSettings() {
+  const msg = document.getElementById("msg");
+  msg.className = "msg";
+
+  const payload = {
+    otp_test_mode: document.getElementById("otp_test_mode").checked,
+    otp_test_code: document.getElementById("otp_test_code").value.trim() || "12345",
+    zarinpal_sandbox: document.getElementById("zarinpal_sandbox").checked,
+    zarinpal_merchant_id: document.getElementById("zarinpal_merchant_id").value.trim(),
+    payment_simulate: document.getElementById("payment_simulate").checked,
+  };
+
+  fetch("/atra-site/admin/api/settings", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  })
+  .then(r => r.json())
+  .then(res => {
+    if (res.status === "success") {
+      msg.className = "msg ok";
+      msg.innerText = res.message || "ذخیره شد.";
+      updateBadges();
+    } else {
+      msg.className = "msg err";
+      msg.innerText = res.message || "خطا";
+    }
+  })
+  .catch(() => {
+    msg.className = "msg err";
+    msg.innerText = "خطای ارتباط با سرور";
+  });
+}
+</script>
+{% endblock %}
