@@ -1,6 +1,7 @@
 import json
 import bcrypt
 import jdatetime
+from datetime import datetime
 from models import db, Admins, PageView, Collaboration
 from config import PERMISSIONS
 from ext import permission_required
@@ -9,15 +10,29 @@ from flask_login import login_required, logout_user, current_user
 
 app = Blueprint("admin", __name__, url_prefix="/atra-site/admin")
 
+
+def _to_jalali_str(dt):
+    """تبدیل datetime میلادی به رشته شمسی خوانا"""
+    if not dt:
+        return "—"
+    try:
+        j = jdatetime.datetime.fromgregorian(datetime=dt)
+        return j.strftime("%Y/%m/%d %H:%M")
+    except Exception:
+        return str(dt)
+
+
 @app.route("/login")
 def login():
     if current_user.is_authenticated:
         return redirect("/atra-site/admin")
     return render_template("admin/login.html")
 
+
 @app.route("/")
-def admin(): 
+def admin():
     return redirect("/atra-site/admin/home")
+
 
 @app.route("/home")
 @login_required
@@ -28,7 +43,6 @@ def admin_home():
     month_str = today.strftime("%Y-%m-01")
     year_str = today.strftime("%Y-01-01")
 
-    # کوئری‌های آمار بازدید (بدون تغییر)
     stats_raw = (
         db.session.query(
             PageView.page_route,
@@ -97,12 +111,11 @@ def admin_home():
     ]
 
     first_record = db.session.query(db.func.min(PageView.jalali_date)).scalar()
-    start_year = int(first_record.split("-")[0]) if first_record else today.year  # today.year در jdatetime خود سال شمسی است
+    start_year = int(first_record.split("-")[0]) if first_record else today.year
 
     user_access = json.loads(current_user.access) if current_user.access else {}
     user_access_level = bool(user_access.get("is_aa") or user_access.get("is_vsv"))
 
-    # دریافت ۵ پیشنهاد اخیر جهت نمایش در داشبورد
     suggestions = Collaboration.query.order_by(Collaboration.id.desc()).limit(5).all()
 
     return render_template(
@@ -117,7 +130,75 @@ def admin_home():
         start_year=start_year
     )
 
-# --- APIهای بخش پیشنهادهای همکاری ---
+
+# --- صفحه و APIهای درخواست‌های همکاری ---
+
+@app.route("/collaborations")
+@login_required
+def collaborations_page():
+    return render_template("admin/collaborations.html")
+
+
+@app.route("/api/collaborations", methods=["GET"])
+@login_required
+def list_collaborations():
+    try:
+        items = Collaboration.query.order_by(Collaboration.id.desc()).all()
+        data = []
+        for c in items:
+            data.append({
+                "id": c.id,
+                "name": c.name,
+                "phone": c.phone,
+                "collaboration_type": c.collaboration_type,
+                "collaboration_data": c.collaboration_data,
+                "status": c.status or "جدید",
+                "admin_note": c.admin_note or "",
+                "created_at_fa": _to_jalali_str(c.created_at),
+            })
+        return jsonify({"status": "success", "data": data}), 200
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+@app.route("/api/collaborations/<int:collab_id>", methods=["PUT"])
+@login_required
+def update_collaboration(collab_id):
+    try:
+        c = Collaboration.query.get(collab_id)
+        if not c:
+            return jsonify({"status": "error", "message": "درخواست یافت نشد."}), 404
+
+        data = request.get_json() or {}
+        if "status" in data:
+            c.status = data["status"]
+        if "admin_note" in data:
+            c.admin_note = data["admin_note"]
+
+        db.session.commit()
+        return jsonify({"status": "success", "message": "با موفقیت ذخیره شد."}), 200
+    except Exception:
+        db.session.rollback()
+        return jsonify({"status": "error", "message": "خطا در ذخیره‌سازی."}), 500
+
+
+@app.route("/api/collaborations/<int:collab_id>", methods=["DELETE"])
+@login_required
+def delete_collaboration(collab_id):
+    try:
+        c = Collaboration.query.get(collab_id)
+        if not c:
+            return jsonify({"status": "error", "message": "درخواست یافت نشد."}), 404
+
+        db.session.delete(c)
+        db.session.commit()
+        return jsonify({"status": "success", "message": "حذف شد."}), 200
+    except Exception:
+        db.session.rollback()
+        return jsonify({"status": "error", "message": "خطا در حذف."}), 500
+
+
+# --- APIهای قدیمی داشبورد برای پیشنهادها (حفظ سازگاری) ---
 
 @app.route("/api/suggestions/<int:sug_id>", methods=["GET"])
 @login_required
@@ -134,6 +215,7 @@ def get_suggestion_detail(sug_id):
         }
     }), 200
 
+
 @app.route("/api/suggestions/<int:sug_id>", methods=["DELETE"])
 @login_required
 def delete_suggestion(sug_id):
@@ -141,18 +223,21 @@ def delete_suggestion(sug_id):
         sug = Collaboration.query.get(sug_id)
         if not sug:
             return jsonify({"status": "error", "message": "پیشنهاد مورد نظر یافت نشد."}), 404
-        
+
         db.session.delete(sug)
         db.session.commit()
         return jsonify({"status": "success", "message": "پیشنهاد همکاری با موفقیت حذف شد."}), 200
     except Exception:
         db.session.rollback()
         return jsonify({"status": "error", "message": "خطا در حذف پیشنهاد."}), 500
+
+
 @app.route("/manage-admin")
 @login_required
 @permission_required("is_mdu")
 def manage_admin():
     return render_template("admin/admins.html", permissions=PERMISSIONS)
+
 
 @app.route("/api/admins", methods=["GET"])
 @login_required
@@ -195,6 +280,7 @@ def get_admins():
     except Exception:
         return jsonify({"status": "error", "message": "خطا در دریافت اطلاعات."}), 500
 
+
 @app.route("/api/add-admin", methods=["POST"])
 @login_required
 def add_admin_api():
@@ -233,6 +319,7 @@ def add_admin_api():
     except Exception:
         db.session.rollback()
         return jsonify({"message": "خطا در ثبت اطلاعات.", "type": "danger"}), 500
+
 
 @app.route("/api/edit-admin/<int:admin_id>", methods=["PUT"])
 @login_required
@@ -277,6 +364,7 @@ def edit_admin_api(admin_id):
         db.session.rollback()
         return jsonify({"message": "خطا در بروزرسانی اطلاعات.", "type": "danger"}), 500
 
+
 @app.route("/api/delete-admin/<int:admin_id>", methods=["DELETE"])
 @login_required
 def delete_admin_api(admin_id):
@@ -307,15 +395,18 @@ def delete_admin_api(admin_id):
         db.session.rollback()
         return jsonify({"message": "خطا در حذف کاربر.", "type": "danger"}), 500
 
+
 @app.route("/page-not-view")
 def page_not_view():
     session["page-not-view"] = True
     return "Done!"
 
+
 @app.route("/page-view")
 def page_view():
     session.pop("page-not-view", None)
     return "Done!"
+
 
 @app.route("/logout")
 @login_required
