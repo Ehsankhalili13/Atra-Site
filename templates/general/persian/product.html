@@ -25,6 +25,54 @@
         color: #059669;
       }
       .cart-feedback.err { color: #dc2626; }
+
+      /* کارت وضعیت */
+      .status-info-card {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-bottom: 22px;
+        padding: 14px 16px;
+        border-radius: 12px;
+        border: 1px solid var(--border-color);
+        background: var(--body-bg-color);
+      }
+      .status-info-item {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        min-width: 120px;
+        flex: 1;
+      }
+      .status-info-item .label {
+        font-size: 0.78rem;
+        opacity: 0.7;
+      }
+      .status-info-item .value {
+        font-size: 0.95rem;
+        font-weight: 600;
+      }
+      .status-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 0.82rem;
+        font-weight: 500;
+        width: fit-content;
+      }
+      .status-pill .dot {
+        width: 7px; height: 7px; border-radius: 50%;
+      }
+      .status-pill.ok { background: rgba(16,185,129,0.12); color: #059669; }
+      .status-pill.ok .dot { background: #10b981; }
+      .status-pill.low { background: rgba(245,158,11,0.14); color: #d97706; }
+      .status-pill.low .dot { background: #f59e0b; }
+      .status-pill.out { background: rgba(239,68,68,0.12); color: #dc2626; }
+      .status-pill.out .dot { background: #ef4444; }
+      .status-pill.off { background: rgba(100,116,139,0.14); color: #64748b; }
+      .status-pill.off .dot { background: #94a3b8; }
     </style>
 {% endblock %}
 
@@ -33,6 +81,22 @@
 {% endblock %}
 
 {% block body %}
+    {% set avail = p.available_quantity if p.available_quantity is defined else 0 %}
+    {% set st = p.stock_status or 'موجود در انبار' %}
+    {% if not p.is_active_for_sale %}
+        {% set pill_class = 'off' %}
+        {% set pill_text = 'غیرفعال برای فروش' %}
+    {% elif avail <= 0 %}
+        {% set pill_class = 'out' %}
+        {% set pill_text = 'ناموجود' %}
+    {% elif avail <= 5 %}
+        {% set pill_class = 'low' %}
+        {% set pill_text = 'موجودی محدود' %}
+    {% else %}
+        {% set pill_class = 'ok' %}
+        {% set pill_text = 'موجود' %}
+    {% endif %}
+
     <main class="product-detail-container">
         <div class="breadcrumb-nav">
             <a href="/products" class="back-link">
@@ -53,6 +117,31 @@
                 
                 <div class="product-divider"></div>
 
+                {# کارت وضعیت #}
+                <div class="status-info-card">
+                    <div class="status-info-item">
+                        <span class="label">وضعیت فروش</span>
+                        <span class="status-pill {{ pill_class }}">
+                            <span class="dot"></span>
+                            {{ pill_text }}
+                        </span>
+                    </div>
+                    <div class="status-info-item">
+                        <span class="label">وضعیت انبار</span>
+                        <span class="value">{{ st }}</span>
+                    </div>
+                    <div class="status-info-item">
+                        <span class="label">موجودی قابل سفارش</span>
+                        <span class="value">{{ avail }} عدد</span>
+                    </div>
+                    {% if p.price %}
+                    <div class="status-info-item">
+                        <span class="label">قیمت</span>
+                        <span class="value">{{ "{:,}".format(p.price.product_price) }} تومان</span>
+                    </div>
+                    {% endif %}
+                </div>
+
                 <div class="product-description-section">
                     <h2 class="section-subtitle">توضیحات محصول</h2>
                     <p class="product-description">
@@ -61,7 +150,10 @@
                 </div>
 
                 <div class="product-actions">
-                    <button type="button" class="btn-add-cart" id="addCartBtn" data-id="{{ p.id }}">افزودن به سبد خرید</button>
+                    <button type="button" class="btn-add-cart" id="addCartBtn" data-id="{{ p.id }}"
+                        {% if not p.is_active_for_sale or avail <= 0 %}disabled{% endif %}>
+                        {% if not p.is_active_for_sale or avail <= 0 %}ناموجود{% else %}افزودن به سبد خرید{% endif %}
+                    </button>
                     <a href="/customer-service" class="btn-primary">استعلام قیمت و مشاوره</a>
                     <a href="/collaboration" class="btn-secondary">درخواست همکاری</a>
                 </div>
@@ -75,6 +167,7 @@
 <script>
 document.getElementById("addCartBtn").addEventListener("click", function () {
   const btn = this;
+  if (btn.disabled) return;
   const fb = document.getElementById("cartFeedback");
   btn.disabled = true;
   fb.style.display = "none";
@@ -94,11 +187,12 @@ document.getElementById("addCartBtn").addEventListener("click", function () {
     if (d.status === "success") {
       fb.className = "cart-feedback";
       fb.innerHTML = d.message + ' — <a href="/account/cart" style="color:var(--site-main-color)">مشاهده سبد</a>';
+      btn.disabled = false;
     } else {
       fb.className = "cart-feedback err";
       fb.innerText = d.message || "خطا";
+      btn.disabled = false;
     }
-    btn.disabled = false;
   })
   .catch(() => {
     fb.style.display = "block";
