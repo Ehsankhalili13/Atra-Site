@@ -1,6 +1,6 @@
-<div class="product-card">
+<div class="product-card" data-product-id="{{ product.id }}">
 
-    <img src="{{ url_for('static', filename='img/p_img/' + product.image_location) }}" alt="product"/>
+    <img src="{{ url_for('static', filename='img/p_img/' + product.image_location) }}" alt="{{ product.product_name_fa }}"/>
     <div class="content">
 
         <a href="/product/{{ product.id }}" class="title">{{ product.product_name_fa }}</a>
@@ -8,7 +8,41 @@
         <div class="description">
             {{ product.product_description_fa }}
         </div>
-    
+
+        {# کارت وضعیت موجودی #}
+        {% set avail = product.available_quantity if product.available_quantity is defined else 0 %}
+        {% set st = product.stock_status or 'موجود در انبار' %}
+        {% if not product.is_active_for_sale %}
+            {% set badge_class = 'status-off' %}
+            {% set badge_text = 'غیرفعال برای فروش' %}
+        {% elif avail <= 0 %}
+            {% set badge_class = 'status-out' %}
+            {% set badge_text = 'ناموجود' %}
+        {% elif avail <= 5 %}
+            {% set badge_class = 'status-low' %}
+            {% set badge_text = st ~ ' · باقی‌مانده ' ~ avail %}
+        {% else %}
+            {% set badge_class = 'status-ok' %}
+            {% set badge_text = st %}
+        {% endif %}
+
+        <div class="stock-status-card {{ badge_class }}">
+            <span class="stock-dot"></span>
+            <span class="stock-text">{{ badge_text }}</span>
+        </div>
+
+        <div class="product-card-actions">
+            <a href="/product/{{ product.id }}" class="btn-card-view">مشاهده محصول</a>
+            <button
+                type="button"
+                class="btn-card-cart"
+                data-id="{{ product.id }}"
+                {% if not product.is_active_for_sale or avail <= 0 %}disabled{% endif %}
+                onclick="addToCartFromList(this)"
+            >افزودن به سبد</button>
+        </div>
+        <div class="card-cart-feedback" id="fb-{{ product.id }}"></div>
+
     </div>
 
 </div>
