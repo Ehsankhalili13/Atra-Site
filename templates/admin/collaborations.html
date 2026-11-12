@@ -1,0 +1,287 @@
+{% extends "admin/base.html" %}
+
+{% block header %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin/dashboard.css') }}">
+<style>
+  .status-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 500;
+  }
+  .status-جدید { background: rgba(0,136,255,0.12); color: #0088ff; }
+  .status-در-حال-بررسی { background: rgba(245,158,11,0.15); color: #d97706; }
+  .status-پاسخ-داده-شده { background: rgba(16,185,129,0.15); color: #059669; }
+  .status-رد-شده { background: rgba(239,68,68,0.12); color: #dc2626; }
+
+  .collab-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 14px;
+    margin-bottom: 4px;
+  }
+  .collab-stats-grid .stat-card {
+    background: var(--box-bg, #fff);
+    border: 1px solid var(--border-color, rgba(0,0,0,0.08));
+    border-radius: 12px;
+    padding: 16px 18px;
+    border-right: 4px solid var(--site-main-color, #0088ff);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+  }
+  .collab-stats-grid .card-title { font-size: 0.85rem; opacity: 0.8; }
+  .collab-stats-grid .card-value { font-size: 1.5rem; font-weight: bold; display: block; margin-top: 4px; }
+
+  .detail-row { margin-bottom: 12px; }
+  .detail-row .label { font-size: 0.85rem; opacity: 0.7; margin-bottom: 2px; }
+  .detail-row .value { font-weight: 500; white-space: pre-wrap; }
+  .detail-box {
+    background: rgba(0,0,0,0.03);
+    border-radius: 8px;
+    padding: 12px 14px;
+    border: 1px solid var(--border-color, #eee);
+  }
+  body.dark .detail-box { background: rgba(255,255,255,0.04); }
+</style>
+{% endblock %}
+
+{% block title %}درخواست‌های همکاری{% endblock %}
+
+{% block body %}
+<main class="dashboard-main">
+
+  <div class="dashboard-header">
+    <h2 class="page-title">درخواست‌های همکاری</h2>
+  </div>
+
+  <!-- Stats -->
+  <div class="collab-stats-grid">
+    <div class="stat-card">
+      <span class="card-title">کل درخواست‌ها</span>
+      <span class="card-value" id="statTotal">۰</span>
+    </div>
+    <div class="stat-card" style="border-right-color:#0088ff">
+      <span class="card-title">جدید</span>
+      <span class="card-value" id="statNew">۰</span>
+    </div>
+    <div class="stat-card" style="border-right-color:#d97706">
+      <span class="card-title">در حال بررسی</span>
+      <span class="card-value" id="statReview">۰</span>
+    </div>
+    <div class="stat-card" style="border-right-color:#059669">
+      <span class="card-title">پاسخ داده‌شده</span>
+      <span class="card-value" id="statDone">۰</span>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="table-card">
+    <div class="table-card-header">
+      <h3>لیست درخواست‌ها</h3>
+      <div class="filter-group">
+        <select id="statusFilter" class="form-select filter-select">
+          <option value="all" selected>همه وضعیت‌ها</option>
+          <option value="جدید">جدید</option>
+          <option value="در حال بررسی">در حال بررسی</option>
+          <option value="پاسخ داده شده">پاسخ داده شده</option>
+          <option value="رد شده">رد شده</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="table-responsive">
+      <table class="table custom-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>نام</th>
+            <th>شماره تماس</th>
+            <th>نوع همکاری</th>
+            <th>وضعیت</th>
+            <th>تاریخ</th>
+            <th>عملیات</th>
+          </tr>
+        </thead>
+        <tbody id="collabTableBody">
+          <tr><td colspan="7" style="text-align:center;opacity:0.6">در حال بارگذاری...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</main>
+
+<script>
+let allCollabs = [];
+
+document.addEventListener("DOMContentLoaded", () => {
+  loadCollaborations();
+
+  document.getElementById("statusFilter").addEventListener("change", renderTable);
+});
+
+function loadCollaborations() {
+  fetch("/atra-site/admin/api/collaborations")
+    .then(r => r.json())
+    .then(res => {
+      if (res.status === "success") {
+        allCollabs = res.data || [];
+        updateStats();
+        renderTable();
+      }
+    })
+    .catch(() => {
+      document.getElementById("collabTableBody").innerHTML =
+        `<tr><td colspan="7" style="text-align:center;color:#dc2626">خطا در دریافت اطلاعات</td></tr>`;
+    });
+}
+
+function updateStats() {
+  const total = allCollabs.length;
+  const neu = allCollabs.filter(c => c.status === "جدید").length;
+  const review = allCollabs.filter(c => c.status === "در حال بررسی").length;
+  const done = allCollabs.filter(c => c.status === "پاسخ داده شده").length;
+
+  document.getElementById("statTotal").innerText = total.toLocaleString("fa-IR");
+  document.getElementById("statNew").innerText = neu.toLocaleString("fa-IR");
+  document.getElementById("statReview").innerText = review.toLocaleString("fa-IR");
+  document.getElementById("statDone").innerText = done.toLocaleString("fa-IR");
+}
+
+function renderTable() {
+  const filter = document.getElementById("statusFilter").value;
+  const list = filter === "all" ? allCollabs : allCollabs.filter(c => c.status === filter);
+  const tbody = document.getElementById("collabTableBody");
+
+  if (!list.length) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;opacity:0.6">درخواستی یافت نشد.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = list.map((c, i) => {
+    const statusClass = "status-" + (c.status || "جدید").replace(/\s+/g, "-");
+    return `
+      <tr data-id="${c.id}">
+        <td>${(i + 1).toLocaleString("fa-IR")}</td>
+        <td>${c.name || "—"}</td>
+        <td>${c.phone || "—"}</td>
+        <td>${c.collaboration_type || "—"}</td>
+        <td><span class="status-badge ${statusClass}">${c.status || "جدید"}</span></td>
+        <td>${c.created_at_fa || "—"}</td>
+        <td class="actions-cell">
+          <button class="btn btn-sm btn-outline-primary" onclick="openDetail(${c.id})">جزئیات</button>
+          <button class="btn btn-sm btn-outline-danger" onclick="deleteCollab(${c.id})">حذف</button>
+        </td>
+      </tr>`;
+  }).join("");
+}
+
+function openDetail(id) {
+  const c = allCollabs.find(x => x.id === id);
+  if (!c) return;
+
+  document.getElementById("dName").innerText = c.name || "—";
+  document.getElementById("dPhone").innerText = c.phone || "—";
+  document.getElementById("dType").innerText = c.collaboration_type || "—";
+  document.getElementById("dDate").innerText = c.created_at_fa || "—";
+  document.getElementById("dData").innerText = c.collaboration_data || "توضیحاتی ثبت نشده است.";
+  document.getElementById("dStatus").value = c.status || "جدید";
+  document.getElementById("dNote").value = c.admin_note || "";
+  document.getElementById("dId").value = c.id;
+
+  ActiveGP();
+  ActiveTP(document.querySelector(".collab-detail-modal"));
+}
+
+function saveCollabStatus() {
+  const id = document.getElementById("dId").value;
+  const status = document.getElementById("dStatus").value;
+  const admin_note = document.getElementById("dNote").value;
+
+  fetch(`/atra-site/admin/api/collaborations/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ status, admin_note })
+  })
+  .then(r => r.json())
+  .then(res => {
+    if (res.status === "success") {
+      DeactivateTP(document.querySelector(".collab-detail-modal"));
+      DeactivateGP();
+      loadCollaborations();
+    } else {
+      alert(res.message || "خطا در ذخیره‌سازی");
+    }
+  })
+  .catch(() => alert("خطای ارتباط با سرور"));
+}
+
+function deleteCollab(id) {
+  if (!confirm("آیا از حذف این درخواست مطمئن هستید؟")) return;
+
+  fetch(`/atra-site/admin/api/collaborations/${id}`, { method: "DELETE" })
+    .then(r => r.json())
+    .then(res => {
+      if (res.status === "success") {
+        loadCollaborations();
+      } else {
+        alert(res.message || "خطا در حذف");
+      }
+    })
+    .catch(() => alert("خطای ارتباط با سرور"));
+}
+</script>
+{% endblock %}
+
+{% block top_page %}
+<div class="collab-detail-modal modern-modal">
+  <div class="modal-header">
+    <h3 class="modal-title">جزئیات درخواست همکاری</h3>
+    <button class="close-btn" onclick="DeactivateTP(document.querySelector('.collab-detail-modal')); DeactivateGP()">×</button>
+  </div>
+
+  <input type="hidden" id="dId">
+
+  <div class="detail-row">
+    <div class="label">نام</div>
+    <div class="value" id="dName">—</div>
+  </div>
+  <div class="detail-row">
+    <div class="label">شماره تماس</div>
+    <div class="value" id="dPhone">—</div>
+  </div>
+  <div class="detail-row">
+    <div class="label">نوع همکاری</div>
+    <div class="value" id="dType">—</div>
+  </div>
+  <div class="detail-row">
+    <div class="label">تاریخ ثبت</div>
+    <div class="value" id="dDate">—</div>
+  </div>
+  <div class="detail-row">
+    <div class="label">توضیحات و اطلاعات تکمیلی</div>
+    <div class="detail-box value" id="dData">—</div>
+  </div>
+
+  <div class="detail-row">
+    <div class="label">وضعیت</div>
+    <select id="dStatus" class="form-select" style="max-width:220px">
+      <option value="جدید">جدید</option>
+      <option value="در حال بررسی">در حال بررسی</option>
+      <option value="پاسخ داده شده">پاسخ داده شده</option>
+      <option value="رد شده">رد شده</option>
+    </select>
+  </div>
+
+  <div class="detail-row">
+    <div class="label">یادداشت ادمین</div>
+    <textarea id="dNote" class="form-control" rows="3" placeholder="یادداشت داخلی..."></textarea>
+  </div>
+
+  <div class="modal-footer" style="margin-top:20px;display:flex;gap:10px;justify-content:flex-end">
+    <button type="button" class="btn btn-secondary"
+      onclick="DeactivateTP(document.querySelector('.collab-detail-modal')); DeactivateGP()">بستن</button>
+    <button type="button" class="btn btn-primary" onclick="saveCollabStatus()">ذخیره تغییرات</button>
+  </div>
+</div>
+{% endblock %}
