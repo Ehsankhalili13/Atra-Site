@@ -2,7 +2,7 @@ import json
 import bcrypt
 import jdatetime
 from datetime import datetime
-from models import db, Admins, PageView, Collaboration
+from models import db, Admins, PageView, Collaboration, Products, Price
 from config import PERMISSIONS
 from ext import permission_required
 from flask import Blueprint, render_template, redirect, session, jsonify, request
@@ -196,6 +196,118 @@ def delete_collaboration(collab_id):
     except Exception:
         db.session.rollback()
         return jsonify({"status": "error", "message": "خطا در حذف."}), 500
+
+
+# --- محصولات و موجودی ---
+
+@app.route("/products")
+@login_required
+def products_page():
+    return render_template("admin/products.html")
+
+
+@app.route("/api/products", methods=["GET"])
+@login_required
+def list_products_admin():
+    try:
+        items = Products.query.order_by(Products.id.desc()).all()
+        data = []
+        for p in items:
+            price_val = p.price.product_price if p.price else 0
+            data.append({
+                "id": p.id,
+                "product_name_fa": p.product_name_fa,
+                "product_name_en": p.product_name_en,
+                "product_name_ar": p.product_name_ar,
+                "product_description_fa": p.product_description_fa,
+                "image_location": p.image_location,
+                "price": price_val,
+                "stock_quantity": p.stock_quantity or 0,
+                "reserved_quantity": p.reserved_quantity or 0,
+                "available_quantity": p.available_quantity,
+                "stock_status": p.stock_status or "موجود در انبار",
+                "is_active_for_sale": bool(p.is_active_for_sale),
+            })
+        return jsonify({"status": "success", "data": data}), 200
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+@app.route("/api/products", methods=["POST"])
+@login_required
+def create_product():
+    try:
+        data = request.get_json() or {}
+        name_fa = (data.get("product_name_fa") or "").strip()
+        if not name_fa:
+            return jsonify({"status": "error", "message": "نام فارسی الزامی است."}), 400
+
+        if Products.query.filter_by(product_name_fa=name_fa).first():
+            return jsonify({"status": "error", "message": "محصولی با این نام قبلاً ثبت شده."}), 400
+
+        product = Products(
+            product_name_fa=name_fa,
+            product_name_en=(data.get("product_name_en") or "").strip() or None,
+            product_name_ar=(data.get("product_name_ar") or "").strip() or None,
+            product_description_fa=data.get("product_description_fa") or "",
+            image_location=data.get("image_location") or "",
+            stock_quantity=int(data.get("stock_quantity") or 0),
+            stock_status=data.get("stock_status") or "موجود در انبار",
+            is_active_for_sale=bool(data.get("is_active_for_sale", True)),
+        )
+        db.session.add(product)
+        db.session.flush()
+
+        price_val = int(data.get("price") or 0)
+        db.session.add(Price(product_id=product.id, product_price=price_val))
+        db.session.commit()
+
+        return jsonify({"status": "success", "message": "محصول ثبت شد.", "id": product.id}), 201
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+@app.route("/api/products/<int:product_id>", methods=["PUT"])
+@login_required
+def update_product(product_id):
+    try:
+        product = Products.query.get(product_id)
+        if not product:
+            return jsonify({"status": "error", "message": "محصول یافت نشد."}), 404
+
+        data = request.get_json() or {}
+        name_fa = (data.get("product_name_fa") or "").strip()
+        if not name_fa:
+            return jsonify({"status": "error", "message": "نام فارسی الزامی است."}), 400
+
+        existing = Products.query.filter(
+            Products.product_name_fa == name_fa,
+            Products.id != product_id
+        ).first()
+        if existing:
+            return jsonify({"status": "error", "message": "نام تکراری است."}), 400
+
+        product.product_name_fa = name_fa
+        product.product_name_en = (data.get("product_name_en") or "").strip() or None
+        product.product_name_ar = (data.get("product_name_ar") or "").strip() or None
+        product.product_description_fa = data.get("product_description_fa") or ""
+        product.image_location = data.get("image_location") or ""
+        product.stock_quantity = int(data.get("stock_quantity") or 0)
+        product.stock_status = data.get("stock_status") or "موجود در انبار"
+        product.is_active_for_sale = bool(data.get("is_active_for_sale", True))
+
+        price_val = int(data.get("price") or 0)
+        if product.price:
+            product.price.product_price = price_val
+        else:
+            db.session.add(Price(product_id=product.id, product_price=price_val))
+
+        db.session.commit()
+        return jsonify({"status": "success", "message": "محصول بروزرسانی شد."}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 
 # --- APIهای قدیمی داشبورد برای پیشنهادها (حفظ سازگاری) ---
