@@ -27,6 +27,7 @@
         <li id="products"><a href="/atra-site/admin/products">محصولات و موجودی</a></li>
         <li id="collaborations"><a href="/atra-site/admin/collaborations">درخواست‌های همکاری</a></li>
         <li id="customers"><a href="/atra-site/admin/customers">مشتریان</a></li>
+        <li id="settings"><a href="/atra-site/admin/settings">حالت آزمایشی</a></li>
         <li id="manage-admin"><a href="/atra-site/admin/manage-admin">مدیران</a></li>
         <li id="logout"><a href="/atra-site/admin/logout">خروج</a></li>
         <button class="change__site__theme" id="theme-switcher">
@@ -73,18 +74,14 @@
         }
     }
 
-    // استفاده از Event Delegation
     document.addEventListener("click", (e) => {
-        // ۱. کلیک روی دکمه باز/بسته کردن سایدبار
         if (e.target.closest("#mobile-nav-toggle")) {
             e.preventDefault();
             toggleSidebar();
-        } 
-        // ۲. کلیک روی لایه تاریک پشت صفحه (Overlay)
-        else if (e.target.closest("#sidebar-overlay")) {
+        } else if (e.target.closest("#sidebar-overlay")) {
             closeSidebar();
-        } 
-    }); 
+        }
+    });
 </script>
 
   {% block script %}{% endblock %}
