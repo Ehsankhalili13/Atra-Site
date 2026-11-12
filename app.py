@@ -2,7 +2,7 @@ import os
 import json
 import bcrypt
 import jdatetime
-from models import db, Admins, Products, Price, Collaboration
+from models import db, Admins, Products, Price, Collaboration, ensure_default_settings
 from blueprint import general, admin, customer
 from flask import Flask, render_template, request, jsonify, session, make_response, Response
 from flask_login import LoginManager, login_user
@@ -40,6 +40,10 @@ with app.app_context():
             access=json.dumps({"is_aa": True, "is_vsv": True, "is_mdu": True})
         ))
         db.session.commit()
+    try:
+        ensure_default_settings()
+    except Exception:
+        pass
 
 STATIC_ROUTES = [
     '/', '/about-us', '/products', '/customer-service', '/collaboration',
@@ -138,7 +142,7 @@ def collaboration_api():
     try:
         data = request.get_json() or {}
 
-        name = data.get("fullname")
+        name = data.get("name")
         phone = data.get("phone")
         collaboration_type = data.get("collaborationType")
         collaboration_data = data.get("collaborationData")
