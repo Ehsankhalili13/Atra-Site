@@ -27,9 +27,9 @@ class Products(db.Model):
 
     # موجودی و فروش
     stock_quantity = db.Column(db.Integer, default=0, nullable=False)
-    reserved_quantity = db.Column(db.Integer, default=0, nullable=False)  # رزرو شده برای سفارش‌های در انتظار پرداخت
-    stock_status = db.Column(db.String(100), default='موجود در انبار')  # مثال: موجود در انبار، روی خط تولید، ناموجود
-    is_active_for_sale = db.Column(db.Boolean, default=True)  # آیا در فروشگاه نمایش داده شود
+    reserved_quantity = db.Column(db.Integer, default=0, nullable=False)
+    stock_status = db.Column(db.String(100), default='موجود در انبار')
+    is_active_for_sale = db.Column(db.Boolean, default=True)
 
     price = db.relationship('Price', backref='product', uselist=False, lazy=True)
     cart_items = db.relationship('CartItem', backref='product', lazy=True)
@@ -37,7 +37,6 @@ class Products(db.Model):
 
     @property
     def available_quantity(self):
-        """تعداد قابل فروش = موجودی واقعی منهای رزرو شده"""
         return max(0, (self.stock_quantity or 0) - (self.reserved_quantity or 0))
 
 
@@ -56,6 +55,12 @@ class ProductFAQ(db.Model):
     answer_ar = db.Column(db.Text, nullable=False)
 
 
+class Softes(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    slide_img_location = db.Column(db.String(200))
+
+
+# نگه داشتن نام قبلی برای سازگاری
 class Slides(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     slide_img_location = db.Column(db.String(200))
@@ -67,9 +72,9 @@ class Collaboration(db.Model):
     phone = db.Column(db.String(20))
     collaboration_type = db.Column(db.String(150))
     collaboration_data = db.Column(db.Text)
-    status = db.Column(db.String(50), default='جدید')  # جدید، در حال بررسی، پاسخ داده شده، رد شده
+    status = db.Column(db.String(50), default='جدید')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    admin_note = db.Column(db.Text)  # یادداشت ادمین
+    admin_note = db.Column(db.Text)
 
 
 class Admins(db.Model, UserMixin):
@@ -111,14 +116,72 @@ class Price(db.Model):
     product_id = db.Column(db.Integer, db.ForeignKey('products.id'), unique=True, nullable=False)
 
 
+# ==================== تنظیمات سایت / حالت آزمایشی ====================
+
+class SiteSetting(db.Model):
+    """کلید-مقدار برای تنظیمات سیستم (حالت آزمایشی و غیره)"""
+    __tablename__ = 'site_settings'
+
+    id = db.Column(db.Integer, primary_key=True)
+    key = db.Column(db.String(100), unique=True, nullable=False, index=True)
+    value = db.Column(db.Text, nullable=True)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # کلیدهای پیش‌فرض و معنی‌شان:
+    # otp_test_mode          -> "1" / "0"  : OTP واقعی ارسال نشود؛ کد ثابت استفاده شود
+    # otp_test_code          -> مثلاً "12345"
+    # zarinpal_sandbox       -> "1" / "0"  : استفاده از درگاه آزمایشی زرین‌پال
+    # payment_simulate       -> "1" / "0"  : امکان تأیید دستی/شبیه‌سازی پرداخت بدون درگاه
+    # zarinpal_merchant_id   -> کد درگاه (اختیاری تا زمان دریافت)
+
+
+def get_setting(key, default=None):
+    row = SiteSetting.query.filter_by(key=key).first()
+    if not row or row.value is None:
+        return default
+    return row.value
+
+
+def get_setting_bool(key, default=False):
+    val = get_setting(key, None)
+    if val is None:
+        return default
+    return str(val).strip().lower() in ("1", "true", "yes", "on")
+
+
+def set_setting(key, value):
+    row = SiteSetting.query.filter_by(key=key).first()
+    if not row:
+        row = SiteSetting(key=key, value=str(value) if value is not None else None)
+        db.session.add(row)
+    else:
+        row.value = str(value) if value is not None else None
+        row.updated_at = datetime.utcnow()
+    return row
+
+
+def ensure_default_settings():
+    """مقادیر پیش‌فرض حالت آزمایشی — فقط اگر کلید وجود نداشته باشد"""
+    defaults = {
+        "otp_test_mode": "1",          # فعلاً چون OTP واقعی نداریم، پیش‌فرض آزمایشی روشن
+        "otp_test_code": "12345",
+        "zarinpal_sandbox": "1",       # تا گرفتن درگاه واقعی، sandbox روشن
+        "payment_simulate": "1",       # شبیه‌سازی پرداخت برای تست بدون زرین‌پال
+        "zarinpal_merchant_id": "",
+    }
+    for k, v in defaults.items():
+        if not SiteSetting.query.filter_by(key=k).first():
+            db.session.add(SiteSetting(key=k, value=v))
+    db.session.commit()
+
+
 # ==================== بخش فروشگاه و مشتریان ====================
 
 class Customer(db.Model, UserMixin):
-    """کاربران عادی فروشگاه (مشتریان داخلی)"""
     __tablename__ = 'customers'
 
     id = db.Column(db.Integer, primary_key=True)
-    phone = db.Column(db.String(15), unique=True, nullable=False, index=True)  # ورود با شماره موبایل
+    phone = db.Column(db.String(15), unique=True, nullable=False, index=True)
     password = db.Column(db.Text, nullable=False)
     first_name = db.Column(db.String(100), nullable=False)
     last_name = db.Column(db.String(100), nullable=False)
@@ -137,13 +200,12 @@ class Customer(db.Model, UserMixin):
 
 
 class Address(db.Model):
-    """آدرس‌های تحویل مشتری"""
     __tablename__ = 'addresses'
 
     id = db.Column(db.Integer, primary_key=True)
     customer_id = db.Column(db.Integer, db.ForeignKey('customers.id'), nullable=False)
 
-    title = db.Column(db.String(50), default='منزل')  # منزل، محل کار، ...
+    title = db.Column(db.String(50), default='منزل')
     province = db.Column(db.String(100), nullable=False)
     city = db.Column(db.String(100), nullable=False)
     address_line = db.Column(db.Text, nullable=False)
@@ -155,7 +217,6 @@ class Address(db.Model):
 
 
 class Cart(db.Model):
-    """سبد خرید مشتری (یک سبد به ازای هر مشتری)"""
     __tablename__ = 'carts'
 
     id = db.Column(db.Integer, primary_key=True)
@@ -174,7 +235,6 @@ class Cart(db.Model):
 
 
 class CartItem(db.Model):
-    """اقلام داخل سبد خرید"""
     __tablename__ = 'cart_items'
 
     id = db.Column(db.Integer, primary_key=True)
@@ -199,28 +259,23 @@ class CartItem(db.Model):
 
 
 class Order(db.Model):
-    """سفارش ثبت‌شده"""
     __tablename__ = 'orders'
 
     id = db.Column(db.Integer, primary_key=True)
-    order_code = db.Column(db.String(30), unique=True, nullable=False, index=True)  # مثلاً ATR-1405-000123
+    order_code = db.Column(db.String(30), unique=True, nullable=False, index=True)
 
     customer_id = db.Column(db.Integer, db.ForeignKey('customers.id'), nullable=False)
 
-    # وضعیت‌ها
-    status = db.Column(db.String(40), default='pending_payment')  # pending_payment, paid, processing, shipped, delivered, cancelled
-    payment_status = db.Column(db.String(30), default='unpaid')  # unpaid, paid, failed, refunded
+    status = db.Column(db.String(40), default='pending_payment')
+    payment_status = db.Column(db.String(30), default='unpaid')
 
-    # زرین‌پال
     zarinpal_authority = db.Column(db.String(100))
     zarinpal_ref_id = db.Column(db.String(100))
 
-    # مبالغ
     shipping_cost = db.Column(db.Integer, default=0)
-    items_total = db.Column(db.Integer, default=0)  # جمع اقلام قبل از هزینه ارسال
-    total_amount = db.Column(db.Integer, default=0)  # مبلغ نهایی
+    items_total = db.Column(db.Integer, default=0)
+    total_amount = db.Column(db.Integer, default=0)
 
-    # مشخصات تحویل (اسنپ‌شات در لحظه ثبت)
     receiver_name = db.Column(db.String(150), nullable=False)
     receiver_phone = db.Column(db.String(15), nullable=False)
     province = db.Column(db.String(100), nullable=False)
@@ -228,8 +283,8 @@ class Order(db.Model):
     address_line = db.Column(db.Text, nullable=False)
     postal_code = db.Column(db.String(20))
 
-    customer_note = db.Column(db.Text)  # یادداشت مشتری
-    admin_note = db.Column(db.Text)  # یادداشت ادمین
+    customer_note = db.Column(db.Text)
+    admin_note = db.Column(db.Text)
 
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     paid_at = db.Column(db.DateTime, nullable=True)
@@ -237,7 +292,6 @@ class Order(db.Model):
 
     items = db.relationship('OrderItem', backref='order', lazy=True, cascade='all, delete-orphan')
 
-    # وضعیت‌های قابل نمایش به کاربر
     STATUS_LABELS = {
         'pending_payment': 'در انتظار پرداخت',
         'paid': 'پرداخت‌شده',
@@ -253,14 +307,13 @@ class Order(db.Model):
 
 
 class OrderItem(db.Model):
-    """اقلام هر سفارش (با اسنپ‌شات نام و قیمت)"""
     __tablename__ = 'order_items'
 
     id = db.Column(db.Integer, primary_key=True)
     order_id = db.Column(db.Integer, db.ForeignKey('orders.id'), nullable=False)
-    product_id = db.Column(db.Integer, db.ForeignKey('products.id'), nullable=True)  # nullable چون ممکن است محصول بعداً حذف شود
+    product_id = db.Column(db.Integer, db.ForeignKey('products.id'), nullable=True)
 
-    product_name = db.Column(db.String(100), nullable=False)  # اسنپ‌شات نام
+    product_name = db.Column(db.String(100), nullable=False)
     quantity = db.Column(db.Integer, nullable=False)
-    unit_price = db.Column(db.Integer, nullable=False)  # قیمت واحد در لحظه خرید
-    total_price = db.Column(db.Integer, nullable=False)  # quantity * unit_price
+    unit_price = db.Column(db.Integer, nullable=False)
+    total_price = db.Column(db.Integer, nullable=False)
