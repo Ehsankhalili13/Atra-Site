@@ -1,0 +1,52 @@
+{% extends "general/persian/base.html" %}
+
+{% block title %}پرداخت سفارش{% endblock %}
+
+{% block head %}
+<style>
+  .pay-wrap { max-width: 480px; margin: 40px auto; padding: 0 16px; text-align: center; }
+  .pay-card {
+    background: var(--nav-bg, #fff);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 28px 22px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.04);
+  }
+  .pay-card h1 { font-size: 1.25rem; color: var(--site-main-color); margin-bottom: 10px; }
+  .pay-card p { opacity: 0.85; margin-bottom: 8px; font-size: 0.95rem; }
+  .code { font-family: monospace; font-weight: 600; direction: ltr; }
+  .amount { font-size: 1.3rem; font-weight: 700; margin: 16px 0; }
+  .note {
+    background: rgba(245,158,11,0.12); color: #d97706;
+    padding: 12px; border-radius: 10px; font-size: 0.88rem; margin: 16px 0; text-align: right;
+  }
+  .links { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 18px; }
+  .links a {
+    padding: 10px 16px; border-radius: 8px; text-decoration: none; font-size: 0.9rem;
+    border: 1px solid var(--border-color); color: var(--bs-body-color);
+  }
+  .links a.primary { background: var(--site-main-color); color: #fff; border-color: transparent; }
+</style>
+{% endblock %}
+
+{% block body %}
+<main>
+  <div class="pay-wrap">
+    <div class="pay-card">
+      <h1>سفارش ثبت شد</h1>
+      <p>کد سفارش: <span class="code">{{ order.order_code }}</span></p>
+      <p>وضعیت: {{ order.status_label }}</p>
+      <div class="amount">{{ "{:,}".format(order.total_amount) }} تومان</div>
+
+      <div class="note">
+        درگاه زرین‌پال به‌زودی متصل می‌شود. فعلاً سفارش شما با وضعیت «در انتظار پرداخت» ثبت شده و موجودی رزرو شده است.
+      </div>
+
+      <div class="links">
+        <a href="/account/profile" class="primary">پروفایل و سفارش‌ها</a>
+        <a href="/products">بازگشت به فروشگاه</a>
+      </div>
+    </div>
+  </div>
+</main>
+{% endblock %}
