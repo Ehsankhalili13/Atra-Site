@@ -1,0 +1,324 @@
+{% extends "admin/base.html" %}
+
+{% block header %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin/dashboard.css') }}">
+<style>
+  .order-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 14px;
+  }
+  .order-stats-grid .stat-card {
+    background: var(--box-bg, #fff);
+    border: 1px solid var(--border-color, rgba(0,0,0,0.08));
+    border-radius: 12px;
+    padding: 14px 16px;
+    border-right: 4px solid var(--site-main-color, #0088ff);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+  }
+  .order-stats-grid .card-title { font-size: 0.82rem; opacity: 0.8; }
+  .order-stats-grid .card-value { font-size: 1.4rem; font-weight: bold; display: block; margin-top: 4px; }
+
+  .status-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 0.78rem;
+    font-weight: 500;
+  }
+  .st-pending_payment { background: rgba(245,158,11,0.15); color: #d97706; }
+  .st-paid { background: rgba(0,136,255,0.12); color: #0088ff; }
+  .st-processing { background: rgba(139,92,246,0.15); color: #7c3aed; }
+  .st-shipped { background: rgba(16,185,129,0.15); color: #059669; }
+  .st-delivered { background: rgba(16,185,129,0.25); color: #047857; }
+  .st-cancelled { background: rgba(239,68,68,0.12); color: #dc2626; }
+
+  .detail-row { margin-bottom: 10px; }
+  .detail-row .label { font-size: 0.82rem; opacity: 0.7; }
+  .detail-row .value { font-weight: 500; }
+  .items-table { width: 100%; margin-top: 8px; font-size: 0.9rem; }
+  .items-table th, .items-table td { padding: 6px 8px; border-bottom: 1px solid var(--border-color, #eee); text-align: right; }
+  .modal-footer { margin-top: 16px; display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
+</style>
+{% endblock %}
+
+{% block title %}سفارش‌ها{% endblock %}
+
+{% block body %}
+<main class="dashboard-main">
+
+  <div class="dashboard-header">
+    <h2 class="page-title">مدیریت سفارش‌ها</h2>
+  </div>
+
+  <div class="order-stats-grid">
+    <div class="stat-card">
+      <span class="card-title">کل سفارش‌ها</span>
+      <span class="card-value" id="statTotal">۰</span>
+    </div>
+    <div class="stat-card" style="border-right-color:#d97706">
+      <span class="card-title">در انتظار پرداخت</span>
+      <span class="card-value" id="statPending">۰</span>
+    </div>
+    <div class="stat-card" style="border-right-color:#0088ff">
+      <span class="card-title">پرداخت‌شده</span>
+      <span class="card-value" id="statPaid">۰</span>
+    </div>
+    <div class="stat-card" style="border-right-color:#7c3aed">
+      <span class="card-title">در حال پردازش</span>
+      <span class="card-value" id="statProcessing">۰</span>
+    </div>
+    <div class="stat-card" style="border-right-color:#059669">
+      <span class="card-title">ارسال / تحویل</span>
+      <span class="card-value" id="statShipped">۰</span>
+    </div>
+  </div>
+
+  <div class="table-card">
+    <div class="table-card-header">
+      <h3>لیست سفارش‌ها</h3>
+      <div class="filter-group" style="display:flex;gap:10px;flex-wrap:wrap">
+        <select id="statusFilter" class="form-select filter-select">
+          <option value="all" selected>همه وضعیت‌ها</option>
+          <option value="pending_payment">در انتظار پرداخت</option>
+          <option value="paid">پرداخت‌شده</option>
+          <option value="processing">در حال پردازش</option>
+          <option value="shipped">ارسال‌شده</option>
+          <option value="delivered">تحویل‌شده</option>
+          <option value="cancelled">لغو‌شده</option>
+        </select>
+        <input type="text" id="searchInput" class="form-control" placeholder="کد سفارش یا نام..." style="max-width:180px">
+      </div>
+    </div>
+
+    <div class="table-responsive">
+      <table class="table custom-table">
+        <thead>
+          <tr>
+            <th>کد سفارش</th>
+            <th>مشتری</th>
+            <th>مبلغ (تومان)</th>
+            <th>وضعیت</th>
+            <th>تاریخ</th>
+            <th>عملیات</th>
+          </tr>
+        </thead>
+        <tbody id="ordersBody">
+          <tr><td colspan="6" style="text-align:center;opacity:0.6">در حال بارگذاری...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</main>
+
+<script>
+let orders = [];
+
+const STATUS_LABELS = {
+  pending_payment: "در انتظار پرداخت",
+  paid: "پرداخت‌شده",
+  processing: "در حال پردازش",
+  shipped: "ارسال‌شده",
+  delivered: "تحویل‌شده",
+  cancelled: "لغو‌شده"
+};
+
+document.addEventListener("DOMContentLoaded", () => {
+  loadOrders();
+  document.getElementById("statusFilter").addEventListener("change", renderTable);
+  document.getElementById("searchInput").addEventListener("input", renderTable);
+});
+
+function loadOrders() {
+  fetch("/atra-site/admin/api/orders")
+    .then(r => r.json())
+    .then(res => {
+      if (res.status === "success") {
+        orders = res.data || [];
+        updateStats();
+        renderTable();
+      }
+    })
+    .catch(() => {
+      document.getElementById("ordersBody").innerHTML =
+        `<tr><td colspan="6" style="text-align:center;color:#dc2626">خطا در دریافت اطلاعات</td></tr>`;
+    });
+}
+
+function updateStats() {
+  const total = orders.length;
+  const pending = orders.filter(o => o.status === "pending_payment").length;
+  const paid = orders.filter(o => o.status === "paid").length;
+  const processing = orders.filter(o => o.status === "processing").length;
+  const shipped = orders.filter(o => o.status === "shipped" || o.status === "delivered").length;
+
+  document.getElementById("statTotal").innerText = total.toLocaleString("fa-IR");
+  document.getElementById("statPending").innerText = pending.toLocaleString("fa-IR");
+  document.getElementById("statPaid").innerText = paid.toLocaleString("fa-IR");
+  document.getElementById("statProcessing").innerText = processing.toLocaleString("fa-IR");
+  document.getElementById("statShipped").innerText = shipped.toLocaleString("fa-IR");
+}
+
+function renderTable() {
+  const status = document.getElementById("statusFilter").value;
+  const q = (document.getElementById("searchInput").value || "").trim().toLowerCase();
+
+  let list = orders;
+  if (status !== "all") list = list.filter(o => o.status === status);
+  if (q) {
+    list = list.filter(o =>
+      (o.order_code || "").toLowerCase().includes(q) ||
+      (o.customer_name || "").toLowerCase().includes(q) ||
+      (o.receiver_phone || "").includes(q)
+    );
+  }
+
+  const tbody = document.getElementById("ordersBody");
+  if (!list.length) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;opacity:0.6">سفارشی یافت نشد.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = list.map(o => `
+    <tr>
+      <td><code>${o.order_code}</code></td>
+      <td>${o.customer_name || o.receiver_name || "—"}</td>
+      <td>${(o.total_amount || 0).toLocaleString("fa-IR")}</td>
+      <td><span class="status-badge st-${o.status}">${STATUS_LABELS[o.status] || o.status}</span></td>
+      <td>${o.created_at_fa || "—"}</td>
+      <td>
+        <button class="btn btn-sm btn-outline-primary" onclick="openOrderDetail(${o.id})">جزئیات</button>
+      </td>
+    </tr>
+  `).join("");
+}
+
+function openOrderDetail(id) {
+  const o = orders.find(x => x.id === id);
+  if (!o) return;
+
+  document.getElementById("dOrderId").value = o.id;
+  document.getElementById("dCode").innerText = o.order_code;
+  document.getElementById("dCustomer").innerText = o.customer_name || "—";
+  document.getElementById("dPhone").innerText = o.receiver_phone || "—";
+  document.getElementById("dAddress").innerText =
+    [o.province, o.city, o.address_line, o.postal_code].filter(Boolean).join(" - ") || "—";
+  document.getElementById("dAmount").innerText = (o.total_amount || 0).toLocaleString("fa-IR") + " تومان";
+  document.getElementById("dShipping").innerText = (o.shipping_cost || 0).toLocaleString("fa-IR") + " تومان";
+  document.getElementById("dRef").innerText = o.zarinpal_ref_id || "—";
+  document.getElementById("dStatus").value = o.status;
+  document.getElementById("dAdminNote").value = o.admin_note || "";
+  document.getElementById("dCustomerNote").innerText = o.customer_note || "—";
+
+  const itemsHtml = (o.items || []).map(it => `
+    <tr>
+      <td>${it.product_name}</td>
+      <td>${it.quantity.toLocaleString("fa-IR")}</td>
+      <td>${it.unit_price.toLocaleString("fa-IR")}</td>
+      <td>${it.total_price.toLocaleString("fa-IR")}</td>
+    </tr>
+  `).join("") || `<tr><td colspan="4" style="text-align:center">بدون قلم</td></tr>`;
+  document.getElementById("dItemsBody").innerHTML = itemsHtml;
+
+  ActiveGP();
+  ActiveTP(document.querySelector(".order-detail-modal"));
+}
+
+function saveOrderStatus() {
+  const id = document.getElementById("dOrderId").value;
+  const status = document.getElementById("dStatus").value;
+  const admin_note = document.getElementById("dAdminNote").value;
+
+  fetch(`/atra-site/admin/api/orders/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ status, admin_note })
+  })
+  .then(r => r.json())
+  .then(res => {
+    if (res.status === "success") {
+      DeactivateTP(document.querySelector(".order-detail-modal"));
+      DeactivateGP();
+      loadOrders();
+    } else {
+      alert(res.message || "خطا در ذخیره‌سازی");
+    }
+  })
+  .catch(() => alert("خطای ارتباط با سرور"));
+}
+</script>
+{% endblock %}
+
+{% block top_page %}
+<div class="order-detail-modal modern-modal">
+  <div class="modal-header">
+    <h3 class="modal-title">جزئیات سفارش</h3>
+    <button class="close-btn" onclick="DeactivateTP(document.querySelector('.order-detail-modal')); DeactivateGP()">×</button>
+  </div>
+
+  <input type="hidden" id="dOrderId">
+
+  <div class="detail-row">
+    <div class="label">کد سفارش</div>
+    <div class="value" id="dCode">—</div>
+  </div>
+  <div class="detail-row">
+    <div class="label">مشتری</div>
+    <div class="value" id="dCustomer">—</div>
+  </div>
+  <div class="detail-row">
+    <div class="label">شماره تماس تحویل</div>
+    <div class="value" id="dPhone">—</div>
+  </div>
+  <div class="detail-row">
+    <div class="label">آدرس</div>
+    <div class="value" id="dAddress">—</div>
+  </div>
+  <div class="detail-row">
+    <div class="label">مبلغ کل / هزینه ارسال</div>
+    <div class="value"><span id="dAmount">—</span> · ارسال: <span id="dShipping">—</span></div>
+  </div>
+  <div class="detail-row">
+    <div class="label">کد پیگیری زرین‌پال</div>
+    <div class="value" id="dRef">—</div>
+  </div>
+  <div class="detail-row">
+    <div class="label">یادداشت مشتری</div>
+    <div class="value" id="dCustomerNote">—</div>
+  </div>
+
+  <div class="detail-row">
+    <div class="label">اقلام سفارش</div>
+    <table class="items-table">
+      <thead>
+        <tr><th>محصول</th><th>تعداد</th><th>قیمت واحد</th><th>جمع</th></tr>
+      </thead>
+      <tbody id="dItemsBody"></tbody>
+    </table>
+  </div>
+
+  <div class="detail-row">
+    <div class="label">وضعیت سفارش</div>
+    <select id="dStatus" class="form-select" style="max-width:220px">
+      <option value="pending_payment">در انتظار پرداخت</option>
+      <option value="paid">پرداخت‌شده</option>
+      <option value="processing">در حال پردازش</option>
+      <option value="shipped">ارسال‌شده</option>
+      <option value="delivered">تحویل‌شده</option>
+      <option value="cancelled">لغو‌شده</option>
+    </select>
+  </div>
+
+  <div class="detail-row">
+    <div class="label">یادداشت ادمین</div>
+    <textarea id="dAdminNote" class="form-control" rows="2" placeholder="یادداشت داخلی..."></textarea>
+  </div>
+
+  <div class="modal-footer">
+    <button type="button" class="btn btn-secondary"
+      onclick="DeactivateTP(document.querySelector('.order-detail-modal')); DeactivateGP()">بستن</button>
+    <button type="button" class="btn btn-primary" onclick="saveOrderStatus()">ذخیره تغییرات</button>
+  </div>
+</div>
+{% endblock %}
