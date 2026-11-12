@@ -1,0 +1,348 @@
+{% extends "admin/base.html" %}
+
+{% block header %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin/dashboard.css') }}">
+<style>
+  .product-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 14px;
+  }
+  .product-stats-grid .stat-card {
+    background: var(--box-bg, #fff);
+    border: 1px solid var(--border-color, rgba(0,0,0,0.08));
+    border-radius: 12px;
+    padding: 16px 18px;
+    border-right: 4px solid var(--site-main-color, #0088ff);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+  }
+  .product-stats-grid .card-title { font-size: 0.85rem; opacity: 0.8; }
+  .product-stats-grid .card-value { font-size: 1.5rem; font-weight: bold; display: block; margin-top: 4px; }
+
+  .stock-ok { color: #059669; font-weight: 600; }
+  .stock-low { color: #d97706; font-weight: 600; }
+  .stock-out { color: #dc2626; font-weight: 600; }
+
+  .status-pill {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 0.78rem;
+    font-weight: 500;
+  }
+  .pill-active { background: rgba(16,185,129,0.15); color: #059669; }
+  .pill-inactive { background: rgba(107,114,128,0.15); color: #6b7280; }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+  .form-grid .full-width { grid-column: 1 / -1; }
+  .form-group label {
+    display: block;
+    font-size: 0.85rem;
+    margin-bottom: 4px;
+    opacity: 0.85;
+  }
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    width: 100%;
+  }
+  .modal-footer {
+    margin-top: 18px;
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+  }
+  .product-thumb {
+    width: 42px;
+    height: 42px;
+    object-fit: cover;
+    border-radius: 6px;
+    background: #eee;
+  }
+  @media (max-width: 576px) {
+    .form-grid { grid-template-columns: 1fr; }
+  }
+</style>
+{% endblock %}
+
+{% block title %}محصولات و موجودی{% endblock %}
+
+{% block body %}
+<main class="dashboard-main">
+
+  <div class="dashboard-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+    <h2 class="page-title">محصولات و موجودی</h2>
+    <button class="btn btn-primary" onclick="openProductModal()">➕ افزودن محصول</button>
+  </div>
+
+  <div class="product-stats-grid">
+    <div class="stat-card">
+      <span class="card-title">کل محصولات</span>
+      <span class="card-value" id="statTotal">۰</span>
+    </div>
+    <div class="stat-card" style="border-right-color:#059669">
+      <span class="card-title">فعال برای فروش</span>
+      <span class="card-value" id="statActive">۰</span>
+    </div>
+    <div class="stat-card" style="border-right-color:#d97706">
+      <span class="card-title">کمبود موجودی</span>
+      <span class="card-value" id="statLow">۰</span>
+    </div>
+    <div class="stat-card" style="border-right-color:#dc2626">
+      <span class="card-title">ناموجود</span>
+      <span class="card-value" id="statOut">۰</span>
+    </div>
+  </div>
+
+  <div class="table-card">
+    <div class="table-card-header">
+      <h3>لیست محصولات</h3>
+      <div class="filter-group">
+        <input type="text" id="searchInput" class="form-control" placeholder="جستجو نام محصول..." style="max-width:200px">
+      </div>
+    </div>
+
+    <div class="table-responsive">
+      <table class="table custom-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>تصویر</th>
+            <th>نام (فارسی)</th>
+            <th>قیمت (تومان)</th>
+            <th>موجودی</th>
+            <th>رزرو</th>
+            <th>قابل فروش</th>
+            <th>وضعیت انبار</th>
+            <th>فروش</th>
+            <th>عملیات</th>
+          </tr>
+        </thead>
+        <tbody id="productsBody">
+          <tr><td colspan="10" style="text-align:center;opacity:0.6">در حال بارگذاری...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</main>
+
+<script>
+let products = [];
+
+document.addEventListener("DOMContentLoaded", () => {
+  loadProducts();
+  document.getElementById("searchInput").addEventListener("input", renderTable);
+});
+
+function loadProducts() {
+  fetch("/atra-site/admin/api/products")
+    .then(r => r.json())
+    .then(res => {
+      if (res.status === "success") {
+        products = res.data || [];
+        updateStats();
+        renderTable();
+      }
+    })
+    .catch(() => {
+      document.getElementById("productsBody").innerHTML =
+        `<tr><td colspan="10" style="text-align:center;color:#dc2626">خطا در دریافت اطلاعات</td></tr>`;
+    });
+}
+
+function updateStats() {
+  const total = products.length;
+  const active = products.filter(p => p.is_active_for_sale).length;
+  const low = products.filter(p => p.available_quantity > 0 && p.available_quantity <= 5).length;
+  const out = products.filter(p => p.available_quantity <= 0).length;
+
+  document.getElementById("statTotal").innerText = total.toLocaleString("fa-IR");
+  document.getElementById("statActive").innerText = active.toLocaleString("fa-IR");
+  document.getElementById("statLow").innerText = low.toLocaleString("fa-IR");
+  document.getElementById("statOut").innerText = out.toLocaleString("fa-IR");
+}
+
+function stockClass(qty) {
+  if (qty <= 0) return "stock-out";
+  if (qty <= 5) return "stock-low";
+  return "stock-ok";
+}
+
+function renderTable() {
+  const q = (document.getElementById("searchInput").value || "").trim().toLowerCase();
+  const list = q
+    ? products.filter(p => (p.product_name_fa || "").toLowerCase().includes(q))
+    : products;
+
+  const tbody = document.getElementById("productsBody");
+  if (!list.length) {
+    tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;opacity:0.6">محصولی یافت نشد.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = list.map((p, i) => {
+    const img = p.image_location
+      ? `<img class="product-thumb" src="/static/${p.image_location}" alt="">`
+      : `<div class="product-thumb"></div>`;
+    const salePill = p.is_active_for_sale
+      ? `<span class="status-pill pill-active">فعال</span>`
+      : `<span class="status-pill pill-inactive">غیرفعال</span>`;
+
+    return `
+      <tr>
+        <td>${(i + 1).toLocaleString("fa-IR")}</td>
+        <td>${img}</td>
+        <td>${p.product_name_fa || "—"}</td>
+        <td>${(p.price || 0).toLocaleString("fa-IR")}</td>
+        <td class="${stockClass(p.stock_quantity)}">${(p.stock_quantity || 0).toLocaleString("fa-IR")}</td>
+        <td>${(p.reserved_quantity || 0).toLocaleString("fa-IR")}</td>
+        <td class="${stockClass(p.available_quantity)}">${(p.available_quantity || 0).toLocaleString("fa-IR")}</td>
+        <td>${p.stock_status || "—"}</td>
+        <td>${salePill}</td>
+        <td>
+          <button class="btn btn-sm btn-outline-primary" onclick="openProductModal(${p.id})">ویرایش</button>
+        </td>
+      </tr>`;
+  }).join("");
+}
+
+function openProductModal(id) {
+  const form = document.getElementById("productForm");
+  form.reset();
+  document.getElementById("productId").value = "";
+  document.getElementById("modalTitle").innerText = "افزودن محصول جدید";
+
+  if (id) {
+    const p = products.find(x => x.id === id);
+    if (!p) return;
+    document.getElementById("modalTitle").innerText = "ویرایش محصول";
+    document.getElementById("productId").value = p.id;
+    document.getElementById("nameFa").value = p.product_name_fa || "";
+    document.getElementById("nameEn").value = p.product_name_en || "";
+    document.getElementById("nameAr").value = p.product_name_ar || "";
+    document.getElementById("descFa").value = p.product_description_fa || "";
+    document.getElementById("price").value = p.price || 0;
+    document.getElementById("stockQty").value = p.stock_quantity || 0;
+    document.getElementById("stockStatus").value = p.stock_status || "موجود در انبار";
+    document.getElementById("imageLocation").value = p.image_location || "";
+    document.getElementById("isActive").checked = !!p.is_active_for_sale;
+  }
+
+  ActiveGP();
+  ActiveTP(document.querySelector(".product-modal"));
+}
+
+function saveProduct(e) {
+  e.preventDefault();
+  const id = document.getElementById("productId").value;
+  const payload = {
+    product_name_fa: document.getElementById("nameFa").value.trim(),
+    product_name_en: document.getElementById("nameEn").value.trim(),
+    product_name_ar: document.getElementById("nameAr").value.trim(),
+    product_description_fa: document.getElementById("descFa").value.trim(),
+    price: parseInt(document.getElementById("price").value) || 0,
+    stock_quantity: parseInt(document.getElementById("stockQty").value) || 0,
+    stock_status: document.getElementById("stockStatus").value,
+    image_location: document.getElementById("imageLocation").value.trim(),
+    is_active_for_sale: document.getElementById("isActive").checked
+  };
+
+  if (!payload.product_name_fa) {
+    alert("نام فارسی محصول الزامی است.");
+    return;
+  }
+
+  const url = id
+    ? `/atra-site/admin/api/products/${id}`
+    : "/atra-site/admin/api/products";
+  const method = id ? "PUT" : "POST";
+
+  fetch(url, {
+    method,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  })
+  .then(r => r.json())
+  .then(res => {
+    if (res.status === "success") {
+      DeactivateTP(document.querySelector(".product-modal"));
+      DeactivateGP();
+      loadProducts();
+    } else {
+      alert(res.message || "خطا در ذخیره‌سازی");
+    }
+  })
+  .catch(() => alert("خطای ارتباط با سرور"));
+}
+</script>
+{% endblock %}
+
+{% block top_page %}
+<div class="product-modal modern-modal">
+  <div class="modal-header">
+    <h3 class="modal-title" id="modalTitle">افزودن محصول</h3>
+    <button class="close-btn" onclick="DeactivateTP(document.querySelector('.product-modal')); DeactivateGP()">×</button>
+  </div>
+
+  <form id="productForm" onsubmit="saveProduct(event)">
+    <input type="hidden" id="productId">
+
+    <div class="form-grid">
+      <div class="form-group">
+        <label>نام فارسی *</label>
+        <input type="text" id="nameFa" class="form-control" required>
+      </div>
+      <div class="form-group">
+        <label>نام انگلیسی</label>
+        <input type="text" id="nameEn" class="form-control">
+      </div>
+      <div class="form-group">
+        <label>نام عربی</label>
+        <input type="text" id="nameAr" class="form-control">
+      </div>
+      <div class="form-group">
+        <label>قیمت (تومان)</label>
+        <input type="number" id="price" class="form-control" min="0" value="0">
+      </div>
+      <div class="form-group">
+        <label>موجودی انبار</label>
+        <input type="number" id="stockQty" class="form-control" min="0" value="0">
+      </div>
+      <div class="form-group">
+        <label>وضعیت انبار</label>
+        <select id="stockStatus" class="form-select">
+          <option value="موجود در انبار">موجود در انبار</option>
+          <option value="روی خط تولید">روی خط تولید</option>
+          <option value="ناموجود">ناموجود</option>
+          <option value="به زودی">به زودی</option>
+        </select>
+      </div>
+      <div class="form-group full-width">
+        <label>مسیر تصویر (نسبت به static)</label>
+        <input type="text" id="imageLocation" class="form-control" placeholder="img/p_img/example.png">
+      </div>
+      <div class="form-group full-width">
+        <label>توضیح کوتاه فارسی</label>
+        <textarea id="descFa" class="form-control" rows="2"></textarea>
+      </div>
+      <div class="form-group full-width">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+          <input type="checkbox" id="isActive" checked>
+          <span>فعال برای فروش در فروشگاه</span>
+        </label>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button type="button" class="btn btn-secondary"
+        onclick="DeactivateTP(document.querySelector('.product-modal')); DeactivateGP()">انصراف</button>
+      <button type="submit" class="btn btn-primary">ذخیره</button>
+    </div>
+  </form>
+</div>
+{% endblock %}
