@@ -1,0 +1,111 @@
+{% extends "admin/base.html" %}
+
+{% block header %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/admin/dashboard.css') }}">
+<style>
+  .cust-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; }
+  .cust-stats .stat-card {
+    background: var(--box-bg, #fff);
+    border: 1px solid var(--border-color, rgba(0,0,0,0.08));
+    border-radius: 12px;
+    padding: 16px 18px;
+    border-right: 4px solid var(--site-main-color, #0088ff);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+  }
+  .cust-stats .card-title { font-size: 0.85rem; opacity: 0.8; }
+  .cust-stats .card-value { font-size: 1.5rem; font-weight: bold; display: block; margin-top: 4px; }
+</style>
+{% endblock %}
+
+{% block title %}مشتریان{% endblock %}
+
+{% block body %}
+<main class="dashboard-main">
+  <div class="dashboard-header">
+    <h2 class="page-title">مشتریان فروشگاه</h2>
+  </div>
+
+  <div class="cust-stats">
+    <div class="stat-card">
+      <span class="card-title">کل مشتریان</span>
+      <span class="card-value" id="statTotal">۰</span>
+    </div>
+  </div>
+
+  <div class="table-card">
+    <div class="table-card-header">
+      <h3>لیست مشتریان</h3>
+      <input type="text" id="searchInput" class="form-control" placeholder="جستجو نام یا موبایل..." style="max-width:220px">
+    </div>
+    <div class="table-responsive">
+      <table class="table custom-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>نام</th>
+            <th>موبایل</th>
+            <th>ایمیل</th>
+            <th>تعداد سفارش</th>
+            <th>تاریخ عضویت</th>
+            <th>آخرین ورود</th>
+          </tr>
+        </thead>
+        <tbody id="custBody">
+          <tr><td colspan="7" style="text-align:center;opacity:0.6">در حال بارگذاری...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</main>
+
+<script>
+let customers = [];
+document.addEventListener("DOMContentLoaded", () => {
+  loadCustomers();
+  document.getElementById("searchInput").addEventListener("input", renderTable);
+});
+
+function loadCustomers() {
+  fetch("/atra-site/admin/api/customers")
+    .then(r => r.json())
+    .then(res => {
+      if (res.status === "success") {
+        customers = res.data || [];
+        document.getElementById("statTotal").innerText = customers.length.toLocaleString("fa-IR");
+        renderTable();
+      }
+    })
+    .catch(() => {
+      document.getElementById("custBody").innerHTML =
+        `<tr><td colspan="7" style="text-align:center;color:#dc2626">خطا در دریافت اطلاعات</td></tr>`;
+    });
+}
+
+function renderTable() {
+  const q = (document.getElementById("searchInput").value || "").trim().toLowerCase();
+  const list = q
+    ? customers.filter(c =>
+        (c.full_name || "").toLowerCase().includes(q) ||
+        (c.phone || "").includes(q))
+    : customers;
+
+  const tbody = document.getElementById("custBody");
+  if (!list.length) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;opacity:0.6">مشتری‌ای یافت نشد.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = list.map((c, i) => `
+    <tr>
+      <td>${(i + 1).toLocaleString("fa-IR")}</td>
+      <td>${c.full_name || "—"}</td>
+      <td>${c.phone || "—"}</td>
+      <td>${c.email || "—"}</td>
+      <td>${(c.orders_count || 0).toLocaleString("fa-IR")}</td>
+      <td>${c.created_at_fa || "—"}</td>
+      <td>${c.last_login_fa || "—"}</td>
+    </tr>
+  `).join("");
+}
+</script>
+{% endblock %}
